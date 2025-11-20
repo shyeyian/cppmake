@@ -1,4 +1,5 @@
-pypi_token.txt
-
 __pycache__
-*.egg-info
+
+cppmake.egg-info
+dist
+pypi_token.txt
