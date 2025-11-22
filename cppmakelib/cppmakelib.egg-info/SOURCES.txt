@@ -1,6 +1,0 @@
-pyproject.toml
-cppmakelib/__init__.py
-cppmakelib.egg-info/PKG-INFO
-cppmakelib.egg-info/SOURCES.txt
-cppmakelib.egg-info/dependency_links.txt
-cppmakelib.egg-info/top_level.txt

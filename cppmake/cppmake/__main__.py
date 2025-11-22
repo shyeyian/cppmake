@@ -1,5 +1,5 @@
 from cppmakelib import *
 
 def main():
-    main_package.is_built()
+    Package("std").cppmake.package()
     getattr(main_package.cppmake, config.target)()

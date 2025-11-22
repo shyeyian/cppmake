@@ -14,6 +14,8 @@ from .error.config     import ConfigError
 from .error.logic      import LogicError
 from .error.subprocess import SubprocessError
 
+from .file.file_system import *
+
 from .execution.run    import run
 
 from .system.all       import system
@@ -25,3 +27,5 @@ from .unit.executable  import Executable
 from .unit.module      import Module
 from .unit.package     import Package, main_package
 from .unit.source      import Source
+
+global package

@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: cppmake
-Version: 13
-Summary: A modern C++ builder based on C++20 Modules.
-Author-email: anonymouspc <shyeyian@petalmail.com>
-License-Expression: MIT
-Requires-Python: >=3.13
-Description-Content-Type: text/markdown
-Requires-Dist: cppmakelib

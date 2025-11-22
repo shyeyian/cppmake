@@ -1,6 +1,0 @@
-pyproject.toml
-cppmake.egg-info/PKG-INFO
-cppmake.egg-info/SOURCES.txt
-cppmake.egg-info/dependency_links.txt
-cppmake.egg-info/top_level.txt
-cppmakelib/__init__.py

@@ -42,9 +42,10 @@ async def __ainit__(self, name, dir):
     self.lib_dir         = f"binary/{config.type}/package/{self.name}/install/lib"
     self.export_modules  = ...
     self.import_packages = ...
-    self.cppmake         = ...
     self.compile_flags   = []
     self.define_macros   = {}
+    self.cppmake         = import_file(self.cppmake_file, globals={"package": self}) if self.cppmake_file is not None else None
+
 
 @member(Package)
 @syncable
@@ -64,7 +65,6 @@ async def async_build(self):
 @trace
 async def async_is_built(self):
     from cppmakelib.unit.module import Module
-    self.cppmake         = import_file(self.cppmake_file) if self.cppmake_file is not None else None
     self.export_modules  = await when_all([Module.__anew__(Module, file=file) for file in iterate_dir(self.module_dir, recursive=True)])                                                                  if self is not main_package else []
     self.import_packages = recursive_collect(self.export_modules, next=lambda module: module.import_modules, collect=lambda module: module.import_package if module.import_package is not self else None) if self is not main_package else []
     return all(await when_all([package.async_is_built() for package in self.import_packages])) and \
