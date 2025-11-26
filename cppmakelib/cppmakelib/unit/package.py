@@ -1,5 +1,4 @@
 from cppmakelib.basic.config          import config
-from cppmakelib.basic.project         import project
 from cppmakelib.error.logic           import LogicError
 from cppmakelib.execution.operation   import when_all
 from cppmakelib.execution.scheduler   import scheduler
@@ -20,8 +19,6 @@ class Package:
     def             is_built(self):            ...
     async def async_is_built(self):            ...
 
-main_package = ...
-
 
 
 @member(Package)
@@ -40,11 +37,11 @@ async def __ainit__(self, name, dir):
     self.install_dir     = f"binary/{config.type}/package/{self.name}/install"
     self.include_dir     = f"binary/{config.type}/package/{self.name}/install/include"
     self.lib_dir         = f"binary/{config.type}/package/{self.name}/install/lib"
-    self.export_modules  = ...
-    self.import_packages = ...
     self.compile_flags   = []
     self.define_macros   = {}
     self.cppmake         = import_file(self.cppmake_file, globals={"package": self}) if self.cppmake_file is not None else None
+    self.export_modules  = ...
+    self.import_packages = ...
 
 
 @member(Package)
@@ -56,7 +53,7 @@ async def async_build(self):
         await when_all([package.async_build() for package in self.import_packages])
         async with scheduler.schedule(scheduler.max):
             print(f"build package: {self.name}")
-            self.cppmake.package() if hasattr(self.cppmake, "package") else None
+            self.cppmake.build() if hasattr(self.cppmake, "build") else None
             await package_status_logger.async_log_status(name=self.name, git_dir=self.git_dir)
 
 @member(Package)
@@ -65,22 +62,20 @@ async def async_build(self):
 @trace
 async def async_is_built(self):
     from cppmakelib.unit.module import Module
-    self.export_modules  = await when_all([Module.__anew__(Module, file=file) for file in iterate_dir(self.module_dir, recursive=True)])                                                                  if self is not main_package else []
-    self.import_packages = recursive_collect(self.export_modules, next=lambda module: module.import_modules, collect=lambda module: module.import_package if module.import_package is not self else None) if self is not main_package else []
+    self.export_modules  = await when_all([Module.__anew__(Module, file=file) for file in iterate_dir(self.module_dir, recursive=True)])                                                                  if self.name != "main" else []
+    self.import_packages = recursive_collect(self.export_modules, next=lambda module: module.import_modules, collect=lambda module: module.import_package if module.import_package is not self else None) if self.name != "main" else []
     return all(await when_all([package.async_is_built() for package in self.import_packages])) and \
            await package_status_logger.async_get_status(name=self.name, git_dir=self.git_dir, cppmake_file=self.cppmake_file)
 
 @member(Package)
 def _name_to_dir(name):
-    return  '.'              if name == project.name         else \
+    return  '.'              if name == "main"               else \
            f"package/{name}" if exist_dir(f"package/{name}") else \
            raise_(LogicError(f"package is not found (with name = {name}, dir = package/{name})"))
 
 @member(Package)
 def _dir_to_name(dir):
-    return project.name                                                                 if canonical_path(dir) == '.'                                        else \
+    return "main"                                                                       if canonical_path(dir) == '.'                                        else \
            canonical_path(dir).remove_prefix("package/")                                if canonical_path(dir).startswith("package/") and     exist_dir(dir) else \
            raise_(LogicError(f"package is not found (with dir = {dir})"))               if canonical_path(dir).startswith("package/") and not exist_dir(dir) else \
            raise_(LogicError(f'package does not match "package/*" (with dir = {dir})'))
-
-main_package = Package(project.name)

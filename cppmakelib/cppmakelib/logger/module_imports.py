@@ -2,6 +2,7 @@ from cppmakelib.basic.config         import config
 from cppmakelib.basic.exit           import on_exit
 from cppmakelib.compiler.all         import compiler
 from cppmakelib.error.logic          import LogicError
+from cppmakelib.execution.scheduler  import scheduler
 from cppmakelib.file.file_system     import create_dir, modified_time_of_file
 from cppmakelib.logger.module_mapper import module_mapper_logger
 from cppmakelib.utility.decorator    import member, syncable
@@ -56,9 +57,10 @@ async def async_get_export(self, type, file):
 async def _async_update_content(self, type, file, name=None):
     from cppmakelib.unit.module import Module
     if file not in self._content["file"].keys() or modified_time_of_file(file) > self._content["file"][file]["time"]:
-        code = open(file, 'r').read()
-        code = re.sub(r'^\s*#include\s*(?!<version>).*$', "", code, flags=re.MULTILINE)
-        code = await compiler.async_preprocess(code=code)
+        async with scheduler.schedule():
+            code = open(file, 'r').read()
+            code = re.sub(r'^\s*#include\s*(?!<version>).*$', "", code, flags=re.MULTILINE)
+            code = await compiler.async_preprocess(code=code)
         if type == "module":
             exports = re.findall(r'^\s*export\s+module\s+([\w\.:]+)\s*;\s*$',      code, flags=re.MULTILINE)
             imports = re.findall(r'^\s*(?:export\s+)?import\s+([\w\.:]+)\s*;\s*$', code, flags=re.MULTILINE)

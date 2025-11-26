@@ -1,6 +1,7 @@
 from cppmakelib.basic.config      import config
 from cppmakelib.basic.exit        import on_exit
 from cppmakelib.builder.git       import git
+from cppmakelib.compiler.all      import compiler
 from cppmakelib.file.file_system  import create_dir, modified_time_of_file
 from cppmakelib.system.all        import system
 from cppmakelib.utility.decorator import member, syncable
@@ -35,23 +36,19 @@ def __exit__(self):
 @syncable
 async def async_log_status(self, name, git_dir):
     self._content[name] = {
-        "time"      : time.time(),
-        "env"       : dict(system.env),
-        "compiler"  : config.compiler,
-        "std"       : config.std,      
-        "git_log"   : await git.async_log   (git_dir) if git_dir is not None else None,
-        "git_status": await git.async_status(git_dir) if git_dir is not None else None
+        "time"           : time.time(),
+        "config.compiler": config.compiler,
+        "config.std"     : config.std,
+        "git.log"        : await git.async_log   (git_dir) if git_dir is not None else None
     }
 
 @member(PackageStatusLogger)
 @syncable
 async def async_get_status(self, name, git_dir, cppmake_file):
-    return name in self._content.keys()                                                                            and \
-           (cppmake_file is None or modified_time_of_file(cppmake_file) <= self._content[name]["time"])            and \
-           system.env      == self._content[name]["env"]                                                           and \
-           config.compiler == self._content[name]["compiler"]                                                      and \
-           config.std      == self._content[name]["std"]                                                           and \
-           (await git.async_log   (git_dir) == self._content[name]["git_log"]    if git_dir is not None else True) and \
-           (await git.async_status(git_dir) == self._content[name]["git_status"] if git_dir is not None else True)
+    return name in self._content.keys()                                                                         and \
+           (cppmake_file is None or modified_time_of_file(cppmake_file) <= self._content[name]["time"])         and \
+           config.std      == self._content[name]["config.std"]                                                 and \
+           config.compiler == self._content[name]["config.compiler"]                                            and \
+           (await git.async_log(git_dir) == self._content[name]["git.log"] if git_dir is not None else True)
 
 package_status_logger = PackageStatusLogger()

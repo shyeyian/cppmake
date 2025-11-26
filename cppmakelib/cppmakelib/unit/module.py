@@ -6,7 +6,7 @@ from cppmakelib.execution.scheduler   import scheduler
 from cppmakelib.file.file_system      import parent_path, canonical_path, exist_file, exist_dir, modified_time_of_file
 from cppmakelib.logger.module_imports import module_imports_logger
 from cppmakelib.logger.module_mapper  import module_mapper_logger
-from cppmakelib.unit.package          import Package, main_package
+from cppmakelib.unit.package          import Package
 from cppmakelib.utility.algorithm     import recursive_collect
 from cppmakelib.utility.decorator     import member, namable, once, syncable, trace, unique
 from cppmakelib.utility.inline        import raise_
@@ -35,8 +35,8 @@ async def __ainit__(self, name, file):
     self.file           = file
     self.module_file    = f"binary/{config.type}/module/{self.name.replace(':', '-')}{compiler.module_suffix}"
     self.object_file    = f"binary/{config.type}/module/{self.name.replace(':', '-')}{compiler.object_suffix}"
+    self.import_package = await Package.__anew__(Package, "main" if self.file.startswith("module/") else self.name.split(':')[0].split('.')[0])
     self.import_modules = await when_all([Module.__anew__(Module, import_) for import_ in await module_imports_logger.async_get_imports(type="module", name=self.name, file=self.file)])
-    self.import_package = main_package if self.file.startswith("module/") else await Package.__anew__(Package, self.name.split(':')[0].split('.')[0])
     module_mapper_logger.log_mapper(name=self.name, file=self.file)
 
 @member(Module)

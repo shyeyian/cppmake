@@ -40,7 +40,7 @@ def exist_dir(dir):
     return os.path.isdir(dir)
 
 def create_file(file):
-    if not exist_file(file) and config.verbose:
+    if config.verbose and not exist_file(file):
         print(f">>> touch {file}")
     try:
         open(file, 'w')
@@ -48,7 +48,7 @@ def create_file(file):
         pass
 
 def create_dir(dir):
-    if not exist_dir(dir) and config.verbose:
+    if config.verbose and not exist_dir(dir):
         print(f">>> mkdir -p {dir}")
     try:
         os.makedirs(dir, exist_ok=True)
@@ -74,7 +74,7 @@ def copy_dir(dir, to):
         pass
 
 def remove_file(file):
-    if exist_file(file) and config.verbose:
+    if config.verbose and exist_file(file):
         print(f">>> rm {file}")
     try:
         os.remove(file)
@@ -82,7 +82,7 @@ def remove_file(file):
         pass
 
 def remove_dir(dir):
-    if exist_dir(dir) and config.verbose:
+    if config.verbose and exist_dir(dir):
         print(f">>> rm -r {dir}")
     try:
         shutil.rmtree(dir)

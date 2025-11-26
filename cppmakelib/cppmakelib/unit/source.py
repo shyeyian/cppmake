@@ -7,7 +7,7 @@ from cppmakelib.file.file_system      import canonical_path, parent_path, exist_
 from cppmakelib.logger.module_imports import module_imports_logger
 from cppmakelib.system.all            import system
 from cppmakelib.unit.module           import Module
-from cppmakelib.unit.package          import main_package
+from cppmakelib.unit.package          import Package
 from cppmakelib.utility.algorithm     import recursive_collect
 from cppmakelib.utility.decorator     import member, namable, once, syncable, trace, unique
 from cppmakelib.utility.inline        import raise_
@@ -52,8 +52,8 @@ async def async_compile(self):
                 include_dirs   =recursive_collect(self, next=lambda module: module.import_modules, collect=lambda module: module.import_package.include_dir                           if exist_dir(module.import_package.include_dir) else None, root=False),
                 link_files     =recursive_collect(self, next=lambda module: module.import_modules, collect=lambda module: module.object_file,                                                                                                    root=False) + 
                                 recursive_collect(self, next=lambda module: module.import_modules, collect=lambda module: iterate_dir(module.import_package.lib_dir, recursive=False) if exist_dir(module.import_package.lib_dir)     else [],   root=False, flatten=True),
-                compile_flags  =main_package.compile_flags,
-                define_macros  =main_package.define_macros
+                compile_flags  =Package("main").compile_flags,
+                define_macros  =Package("main").define_macros
             )
 
 @member(Source)
