@@ -1,4 +1,5 @@
-from cppmakelib.basic.config import config
+from cppmakelib.basic.config  import config
+from cppmakelib.utility.color import yellow
 import os
 import shutil
 
@@ -41,56 +42,41 @@ def exist_dir(dir):
 
 def create_file(file):
     if config.verbose and not exist_file(file):
-        print(f">>> touch {file}")
-    try:
-        open(file, 'w')
-    except:
-        pass
+        print(yellow(f"touch {file}"))
+    open(file, 'w')
 
 def create_dir(dir):
     if config.verbose and not exist_dir(dir):
-        print(f">>> mkdir -p {dir}")
-    try:
-        os.makedirs(dir, exist_ok=True)
-    except:
-        pass
+        print(yellow(f"mkdir -p {dir}"))
+    os.makedirs(dir, exist_ok=True)
 
 def copy_file(file, to):
     if config.verbose:
-        print(f">>> cp {file} {to}")
+        print(yellow(f"cp {file} {to}"))
     create_dir(parent_path(to))
-    try:
-        shutil.copyfile(file, to)
-    except:
-        pass
+    shutil.copyfile(file, to)
 
 def copy_dir(dir, to):
     if config.verbose:
-        print(f">>> cp -r {dir} {to}")
+        print(yellow(f"cp -r {dir} {to}"))
     create_dir(parent_path(to))
-    try:
-        shutil.copytree(dir, to, dirs_exist_ok=True)
-    except:
-        pass
+    shutil.copytree(dir, to, dirs_exist_ok=True)
 
 def remove_file(file):
     if config.verbose and exist_file(file):
-        print(f">>> rm {file}")
-    try:
-        os.remove(file)
-    except:
-        pass
+        print(yellow(f"rm {file}"))
+    os.remove(file)
 
 def remove_dir(dir):
     if config.verbose and exist_dir(dir):
-        print(f">>> rm -r {dir}")
-    try:
-        shutil.rmtree(dir)
-    except:
-        pass
+        print(yellow(f"rm -r {dir}"))
+    shutil.rmtree(dir)
 
 def modified_time_of_file(file):
     return os.path.getmtime(file)
+
+def modified_time_of_dir(dir):
+    return os.path.getmtime(dir)
 
 def iterate_dir(dir, recursive):
     if not recursive:

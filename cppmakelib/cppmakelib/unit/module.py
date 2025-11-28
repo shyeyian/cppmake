@@ -1,15 +1,16 @@
-from cppmakelib.basic.config          import config
-from cppmakelib.compiler.all          import compiler
-from cppmakelib.error.logic           import LogicError
-from cppmakelib.execution.operation   import when_all
-from cppmakelib.execution.scheduler   import scheduler
-from cppmakelib.file.file_system      import parent_path, canonical_path, exist_file, exist_dir, modified_time_of_file
-from cppmakelib.logger.module_imports import module_imports_logger
-from cppmakelib.logger.module_mapper  import module_mapper_logger
-from cppmakelib.unit.package          import Package
-from cppmakelib.utility.algorithm     import recursive_collect
-from cppmakelib.utility.decorator     import member, namable, once, syncable, trace, unique
-from cppmakelib.utility.inline        import raise_
+from cppmakelib.basic.config           import config
+from cppmakelib.compiler.all           import compiler
+from cppmakelib.error.logic            import LogicError
+from cppmakelib.execution.operation    import when_all
+from cppmakelib.execution.scheduler    import scheduler
+from cppmakelib.file.file_system       import parent_path, canonical_path, exist_file, exist_dir, modified_time_of_file
+from cppmakelib.logger.module_mapper   import module_mapper_logger
+from cppmakelib.logger.module_status   import module_status_logger
+from cppmakelib.logger.unit_preprocess import unit_preprocess_logger
+from cppmakelib.unit.package           import Package
+from cppmakelib.utility.algorithm      import recursive_collect
+from cppmakelib.utility.decorator      import member, namable, once, syncable, trace, unique
+from cppmakelib.utility.inline         import raise_
 import re
 
 class Module:
@@ -36,7 +37,9 @@ async def __ainit__(self, name, file):
     self.module_file    = f"binary/{config.type}/module/{self.name.replace(':', '-')}{compiler.module_suffix}"
     self.object_file    = f"binary/{config.type}/module/{self.name.replace(':', '-')}{compiler.object_suffix}"
     self.import_package = await Package.__anew__(Package, "main" if self.file.startswith("module/") else self.name.split(':')[0].split('.')[0])
-    self.import_modules = await when_all([Module.__anew__(Module, import_) for import_ in await module_imports_logger.async_get_imports(type="module", name=self.name, file=self.file)])
+    self.import_modules = await when_all([Module.__anew__(Module, import_) for import_ in await unit_preprocess_logger.async_get_imports(unit=self)])
+    self.compile_flags  = self.import_package.compile_flags
+    self.define_macros  = self.import_package.define_macros
     module_mapper_logger.log_mapper(name=self.name, module_file=self.module_file)
 
 @member(Module)
@@ -55,9 +58,10 @@ async def async_precompile(self):
                 object_file  =self.object_file,
                 module_dirs  =recursive_collect(self, next=lambda module: module.import_modules, collect=lambda module: parent_path(module.module_file)),
                 include_dirs =recursive_collect(self, next=lambda module: module.import_modules, collect=lambda module: module.import_package.include_dir),
-                compile_flags=self.import_package.compile_flags,
-                define_macros=self.import_package.define_macros
+                compile_flags=self.compile_flags,
+                define_macros=self.define_macros
             )
+            module_status_logger.log_status(module=self)
 
 @member(Module)
 @syncable
@@ -66,11 +70,7 @@ async def async_precompile(self):
 async def async_is_precompiled(self):
     return all(await when_all([module.async_is_precompiled() for module in self.import_modules]))    and \
            (await self.import_package.async_is_built() if self.import_package is not None else True) and \
-           exist_file(self.file)                                                                     and \
-           exist_file(self.module_file)                                                              and \
-           exist_file(self.object_file)                                                              and \
-           modified_time_of_file(self.file) <= modified_time_of_file(self.module_file)               and \
-           modified_time_of_file(self.file) <= modified_time_of_file(self.object_file)
+           module_status_logger.get_status(module=self)
 
 @member(Module)
 def _name_to_file(name):
@@ -83,6 +83,6 @@ def _name_to_file(name):
 
 @member(Module)
 async def _async_file_to_name(file):
-    return await module_imports_logger.async_get_export(type="module", file=canonical_path(file))                         if re.match(r'^(package/\w+/)?module/.*\.cpp$', canonical_path(file)) and     exist_file(file) else \
+    return await unit_preprocess_logger.async_get_export(file=canonical_path(file))                                       if re.match(r'^(package/\w+/)?module/.*\.cpp$', canonical_path(file)) and     exist_file(file) else \
            raise_(LogicError(f"module is not found (with file = {file})"))                                                if re.match(r'^(package/\w+/)?module/.*\.cpp$', canonical_path(file)) and not exist_file(file) else \
            raise_(LogicError(f'module does not match "module/**.cpp" or "package/*/module/**.cpp" (with file = {file})'))

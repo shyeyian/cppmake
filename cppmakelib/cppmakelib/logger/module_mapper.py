@@ -14,11 +14,13 @@ module_mapper_logger = ...
 
 @member(ModuleMapperLogger)
 def __init__(self):
-    create_dir(f"binary/{config.type}/cache")
-    self._writer = open(f"binary/{config.type}/cache/module_mapper.txt", 'w')
+    self._writer = None
 
 @member(ModuleMapperLogger)
 def log_mapper(self, name, module_file):
+    if self._writer is None:
+        create_dir(f"binary/{config.type}/cache")
+        self._writer = open(f"binary/{config.type}/cache/module_mapper.txt", 'w')
     self._writer.write(f"{name} {module_file}\n")
     self._writer.flush()
 

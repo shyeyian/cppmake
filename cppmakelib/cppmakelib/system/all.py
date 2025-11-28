@@ -16,3 +16,7 @@ for System in (Linux, Macos, Windows):
         suberrors += [error]
 else:
     raise ConfigError(f'system is not supported, because\n{'\n'.join([f" {error}" for error in suberrors])}')
+
+def _set_system(new_system):
+    global system
+    system = new_system

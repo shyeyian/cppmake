@@ -1,4 +1,4 @@
-pypi-token.txt
+pypi_token.txt
 **/__pycache__
 **/dist
 **/*.egg-info

@@ -11,14 +11,13 @@ compile_output_logger = ...
 
 @member(CompileOutputLogger)
 def __init__(self):
-    create_dir("binary/cache")
-    self._writer = open("binary/cache/compile_output.txt", 'w')
     self._logged = False
 
 @member(CompileOutputLogger)
 def log_output(self, output):
     if not self._logged:
-        self._writer.write(output)
+        create_dir("binary/cache")
+        open("binary/cache/compile_output.txt", 'w').write(output)
         self._logged = True
 
 compile_output_logger = CompileOutputLogger()

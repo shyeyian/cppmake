@@ -2,8 +2,7 @@ from cppmakelib.basic.config      import config
 from cppmakelib.basic.exit        import on_exit
 from cppmakelib.builder.git       import git
 from cppmakelib.compiler.all      import compiler
-from cppmakelib.file.file_system  import create_dir, modified_time_of_file
-from cppmakelib.system.all        import system
+from cppmakelib.file.file_system  import exist_dir, create_dir, modified_time_of_file, modified_time_of_dir
 from cppmakelib.utility.decorator import member, syncable
 import json
 import time
@@ -19,9 +18,9 @@ class PackageStatusLogger:
 package_status_logger = ...
 
 
+
 @member(PackageStatusLogger)
 def __init__(self):
-    create_dir(f"binary/{config.type}/cache")
     try:
         self._content = json.load(open(f"binary/{config.type}/cache/package_status.json", 'r'))
     except:
@@ -30,27 +29,49 @@ def __init__(self):
     
 @member(PackageStatusLogger)
 def __exit__(self):
-    json.dump(self._content, open(f"binary/{config.type}/cache/package_status.json", 'w'), indent=4)
+    if len(self._content) > 0:
+        create_dir(f"binary/{config.type}/cache")
+        json.dump(self._content, open(f"binary/{config.type}/cache/package_status.json", 'w'), indent=4)
 
 @member(PackageStatusLogger)
 @syncable
-async def async_log_status(self, name, git_dir):
-    self._content[name] = {
-        "time"                  : time.time(),
-        "compiler.path"         : compiler.path,
-        "compiler.version"      : str(compiler.version),
-        "compiler.compile_flags": compiler.compile_flags,
-        "git.log"               : await git.async_log(git_dir) if git_dir is not None else None
+async def async_log_status(self, package):
+    self._content[package.name] = {
+        "compiler.name"                              : compiler.name,
+        "compiler.path"                              : compiler.path,
+        "compiler.version"                           : compiler.version.__str__(),
+        "compiler.compile_flags"                     : compiler.compile_flags,
+        "compiler.link_flags"                        : compiler.link_flags,
+        "compiler.define_macros"                     : compiler.define_macros,
+        "package.compile_flags"                      : package.compile_flags,
+        "package.link_flags"                         : package.link_flags,
+        "package.define_macros"                      : package.define_macros,
+        "git.log(package.git_dir)"                   : await git.async_log  (package.git_dir     ) if package.git_dir      is not None else None,
+        "modified_time_of_dir(package.git_dir)"      : modified_time_of_dir (package.git_dir     ) if package.git_dir      is not None else None,
+        "modified_time_of_dir(package.module_dir)"   : modified_time_of_dir (package.module_dir  ) if package.module_dir   is not None else None,
+        "modified_time_of_file(package.cppmake_file)": modified_time_of_file(package.cppmake_file) if package.cppmake_file is not None else None,
+        "modified_time_of_dir(package.build_dir)"    : modified_time_of_dir (package.build_dir   ),
+        "modified_time_of_dir(package.install_dir)"  : modified_time_of_dir (package.install_dir )
     }
 
 @member(PackageStatusLogger)
 @syncable
-async def async_get_status(self, name, git_dir, cppmake_file):
-    return name in self._content.keys()                                                                      and \
-           (cppmake_file is None or modified_time_of_file(cppmake_file) <= self._content[name]["time"])      and \
-           compiler.path          == self._content[name]["compiler.path"]                                    and \
-           str(compiler.version)  == self._content[name]["compiler.version"]                                 and \
-           compiler.compile_flags == self._content[name]["compiler.compile_flags"]                           and \
-           (await git.async_log(git_dir) == self._content[name]["git.log"] if git_dir is not None else True)
+async def async_get_status(self, package):
+    return package.name in self._content.keys()                                                                                                                                     and \
+           compiler.name                                                                              == self._content[package.name]["compiler.name"                              ] and \
+           compiler.path                                                                              == self._content[package.name]["compiler.path"                              ] and \
+           compiler.version.__str__()                                                                 == self._content[package.name]["compiler.version"                           ] and \
+           compiler.compile_flags                                                                     == self._content[package.name]["compiler.compile_flags"                     ] and \
+           compiler.link_flags                                                                        == self._content[package.name]["compiler.link_flags"                        ] and \
+           compiler.define_macros                                                                     == self._content[package.name]["compiler.define_macros"                     ] and \
+           package.compile_flags                                                                      == self._content[package.name]["package.compile_flags"                      ] and \
+           package.link_flags                                                                         == self._content[package.name]["package.link_flags"                         ] and \
+           package.define_macros                                                                      == self._content[package.name]["package.define_macros"                      ] and \
+          (await git.async_log  (package.git_dir     ) if package.git_dir      is not None else None) == self._content[package.name]["git.log(package.git_dir)"                   ] and \
+          (modified_time_of_dir (package.git_dir     ) if package.git_dir      is not None else None) == self._content[package.name]["modified_time_of_dir(package.git_dir)"      ] and \
+          (modified_time_of_dir (package.module_dir  ) if package.module_dir   is not None else None) == self._content[package.name]["modified_time_of_dir(package.module_dir)"   ] and \
+          (modified_time_of_file(package.cppmake_file) if package.cppmake_file is not None else None) == self._content[package.name]["modified_time_of_file(package.cppmake_file)"] and \
+          (modified_time_of_dir (package.build_dir   ) if exist_dir(package.build_dir  )   else None) == self._content[package.name]["modified_time_of_dir(package.build_dir)"    ] and \
+          (modified_time_of_dir (package.install_dir ) if exist_dir(package.install_dir)   else None) == self._content[package.name]["modified_time_of_dir(package.install_dir)"  ]
 
 package_status_logger = PackageStatusLogger()

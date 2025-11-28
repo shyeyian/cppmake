@@ -7,6 +7,7 @@ from .builder.makefile import makefile
 
 from .compiler.all     import compiler
 from .compiler.clang   import Clang
+from .compiler.emcc    import Emcc
 from .compiler.gcc     import Gcc
 from .compiler.msvc    import Msvc
 

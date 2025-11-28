@@ -14,7 +14,6 @@ compile_commands_logger = ...
 
 @member(CompileCommandsLogger)
 def __init__(self):
-    create_dir("binary/cache")
     try:
         self._content = json.load(open("binary/cache/compile_commands.json", 'r'))
     except:
@@ -23,7 +22,9 @@ def __init__(self):
 
 @member(CompileCommandsLogger)
 def __exit__(self):
-    json.dump(self._content, open("binary/cache/compile_commands.json", 'w'), indent=4)
+    if len(self._content) > 0:
+        create_dir("binary/cache")
+        json.dump(self._content, open("binary/cache/compile_commands.json", 'w'), indent=4)
 
 @member(CompileCommandsLogger)
 def log_command(self, command, file):
