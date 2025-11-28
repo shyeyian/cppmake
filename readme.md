@@ -26,20 +26,20 @@ python install.py
 
 In a cppmake project: 
 - A C++ file is either a module or a source.
-  - module `A.B.C:D.E` should be placed at `module/A/B/C/D/E.cpp`
+  - module `aaa.bbb:ccc` should be placed at `module/aaa/bbb/ccc.cpp`
   - source `main` should be placed at `source/main.cpp`
 - A C++ package is either modularized, or requires a cppmake.py 
-  - package boost should be located at package/boost
+  - package boost should be located at `package/boost`
 
 For example:
 ```
 .
 ├── module
-│   ├── A.cpp
-│   ├── A
-│   │   ├── M.cpp // A.M
-│   │   └── N.cpp // A:N
-│   └── B.cpp
+│   ├── aaa.cpp
+│   ├── aaa
+│   │   ├── mmm.cpp // aaa.mmm
+│   │   └── nnn.cpp // aaa:nnn
+│   └── bbb.cpp
 ├── source
 │   └── main.cpp
 ├── package
@@ -68,8 +68,7 @@ System/compiler support:
 | Windows | ✗     | ✗    | ✗   | ✗    | 
 - ✓: Supported and tested.
 - ✗: Not implemented yet; planned for future releases.
-- *(The author does not own a Windows PC. Contributions for Windows support
-are welcome!)*
+- *(The author does not own a Windows PC. Contributions for Windows supportare welcome!)*
 
 # Configure
 
@@ -83,7 +82,7 @@ def make():
 ```
 This `cppmake.py` defines a single source `source/main.cpp`, which will be
 built into a binary.
-- *(Imported modules and packages are built automatically before compiling the source. For example, if `source/main.cpp` imports module my_module and module `boost.asio`, then Cppmake will precompile `my_module` and build `boost` before finally compiling `source/main.cpp`.)*
+- *(Imported modules and packages are built automatically before compiling the source. For example, if `source/main.cpp` imports module my_module and module `boost.asio`, then Cppmake will precompile module `my_module`, cmake build `boost`, and precompile module `boost.asio` before finally compiling `source/main.cpp`.)*
 - *(By default, the imported modules and packages form a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) and are executed with maximum possible parallelism, depending on your cpu thread count. You can control the level of parallelism using `cppmake --parallel=N`, or force serial compilation through `cppmake --parallel=1`.)*
 
 Another example:
@@ -138,10 +137,11 @@ export namespace boost::asio
 will modularize boost.asio into a module.
 
 Builder support: 
-| cmake | include* | makefile | meson | msbuild |
-|:-----:|:--------:|:--------:|:-----:|:-------:| 
-| ✓     | ✓        | ✓        | ✗     | ✗       |
-
-- *(include: header-only libraries.)*
+| cmake | include* | makefile | msbuild |
+|:-----:|:--------:|:--------:|:-------:| 
+| ✓     | ✓        | ✓        | ✗       |
+- ✓: Supported and tested.
+- ✗: Not implemented yet; planned for future releases.
+- *(include: means header-only libraries.)*
 
 # Thank you!
