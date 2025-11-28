@@ -1,6 +1,6 @@
 from cppmakelib.basic.config import config
 from cppmakelib.error.config import ConfigError
-import importlib
+import importlib.util
 
 def import_file(file, globals={}): ...
 

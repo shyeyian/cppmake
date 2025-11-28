@@ -37,7 +37,7 @@ async def __ainit__(self, path="clang++"):
     self.compile_flags = [
        f"-std={config.std}",
         "-fdiagnostics-color=always",
-        "-Wall",
+        "-Wall", "-Wno-import-implementation-partition-unit-in-interface-unit",
         *(["-O0", "-g", "-fno-inline"] if config.type == "debug"   else
           ["-O3",                    ] if config.type == "release" else
           ["-Os"                     ] if config.type == "size"    else 

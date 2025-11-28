@@ -1,0 +1,147 @@
+# Cppmake: A C++20 Modules Build System
+
+Cppmake is a modern, fast, and accurate C++ build system focusing on C++20 Modules.
+
+Cppmake aims to
+- Make everything modular.
+- Easily modularize third-party libraries.
+- Be fast, parallel, and fully cached.
+
+Cppmake is written in pure Python with no additional pip dependencies.
+
+# Install
+
+Use pip to install cppmake:
+```sh
+pip install cppmake
+```
+Or install from source:
+```sh
+git clone https://github.com/anonymouspc/cppmake
+cd cppmake
+python install.py
+```
+
+# Getting Started
+
+In a cppmake project: 
+- A C++ file is either a module or a source.
+  - module `A.B.C:D.E` should be placed at `module/A/B/C/D/E.cpp`
+  - source `main` should be placed at `source/main.cpp`
+- A C++ package is either modularized, or requires a cppmake.py 
+  - package boost should be located at package/boost
+
+For example:
+```
+.
+├── module
+│   ├── A.cpp
+│   ├── A
+│   │   ├── M.cpp // A.M
+│   │   └── N.cpp // A:N
+│   └── B.cpp
+├── source
+│   └── main.cpp
+├── package
+│   ├── boost
+│   └── eigen
+└── cppmake.py
+```
+Then, run
+```sh
+cppmake
+```
+The output will be generated in the binary directory.
+
+# Advanced
+
+Cppmake provides various configurable options, such as:
+```sh
+cppmake --target=build --type=release --compiler=clang++ --linker=lld --std=c++23 --parallel=$(nproc)
+```
+
+System/compiler support:
+|         | clang | emcc | gcc | msvc |
+|:-------:|:-----:|:----:|:---:|:----:| 
+| Linux   | ✓     | ✓    | ✓   | N/A  |  
+| Macos   | ✓     | ✓    | ✓   | N/A  |  
+| Windows | ✗     | ✗    | ✗   | ✗    | 
+- ✓: Supported and tested.
+- ✗: Not implemented yet; planned for future releases.
+- *(The author does not own a Windows PC. Contributions for Windows support
+are welcome!)*
+
+# Configure
+
+Cppmake uses a `cppmake.py` file (pure Python) to describe the C++ project. The configuration is entirely standard Python syntax.
+
+For example:
+```py
+from cppmakelib import *
+def make():
+    Source("main").compile()
+```
+This `cppmake.py` defines a single source `source/main.cpp`, which will be
+built into a binary.
+- *(Imported modules and packages are built automatically before compiling the source. For example, if `source/main.cpp` imports module my_module and module `boost.asio`, then Cppmake will precompile `my_module` and build `boost` before finally compiling `source/main.cpp`.)*
+- *(By default, the imported modules and packages form a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) and are executed with maximum possible parallelism, depending on your cpu thread count. You can control the level of parallelism using `cppmake --parallel=N`, or force serial compilation through `cppmake --parallel=1`.)*
+
+Another example:
+```py
+from cppmakelib import *
+
+if type(compiler) == Gcc:
+    compiler.compile_flags += ["-fno-inline"] # global
+    compiler.define_macros |= {"NDEBUG": '1'} # global
+
+package.define_macros = {"MY_MACRO": "42"} # package-local
+
+def build(): # select a source file to compile
+    if type(system) == Linux:
+        Source("linux").compile()
+
+def test(): # compile and test all units
+    for file in iterate_dir("source/test"):
+        Source(file=file).compile()
+        Executable(file=file).run()
+```
+This `cppmake.py` defines 2 targets (switchable via
+`cppmake --target=build|test`) and several configuration rules. You can
+easily extend it using the full Python environment.
+
+For third-party packages, define a `build()` function in the package’s
+`cppmake.py` to describe how it should be built. For example:
+```py
+# package/boost/cppmake.py
+from cppmakelib import *
+
+def build():
+    cmake.build(
+        package=package,
+        args=[
+            "-DBUILD_SHARED_LIBS=OFF"
+        ]
+    )
+```
+Then:
+```cpp
+// package/boost/module/boost/asio.cpp
+module;
+#include <boost/asio.hpp>
+export module boost.asio;
+export namespace boost::asio
+{
+    using boost::asio::io_context;
+    //...
+}
+```
+will modularize boost.asio into a module.
+
+Builder support: 
+| cmake | include* | makefile | meson | msbuild |
+|:-----:|:--------:|:--------:|:-----:|:-------:| 
+| ✓     | ✓        | ✓        | ✗     | ✗       |
+
+- *(include: header-only libraries.)*
+
+# Thank you!

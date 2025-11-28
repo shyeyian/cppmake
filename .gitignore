@@ -1,4 +1,6 @@
 pypi_token.txt
-**/__pycache__
+**/binary
+**/build
 **/dist
+**/__pycache__
 **/*.egg-info
