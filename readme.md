@@ -66,7 +66,7 @@ System/compiler support:
 | Windows | ✗     | ✗    | ✗   | ✗    | 
 - ✓: Supported and tested.
 - ✗: Not implemented yet; planned for future releases.
-- *(The author does not own a Windows PC. Contributions for Windows supportare welcome!)*
+- *(The author does not own a Windows PC. Contributions for Windows support are welcome!)*
 
 # Configure
 
@@ -80,8 +80,8 @@ def make():
 ```
 This `cppmake.py` defines a single source `source/main.cpp`, which will be
 built into a binary.
-- *(Imported modules and packages are built automatically before compiling the source. For example, if `source/main.cpp` imports module my_module and module `boost.asio`, then Cppmake will precompile module `my_module`, cmake build `boost`, and precompile module `boost.asio` before finally compiling `source/main.cpp`.)*
-- *(By default, the imported modules and packages form a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) and are executed with maximum possible parallelism, depending on your cpu thread count. You can control the level of parallelism using `cppmake --parallel=N`, or force serial compilation through `cppmake --parallel=1`.)*
+- *(Imported modules and packages will be built automatically before compiling the source. For example, if `source/main.cpp` imports module my_module and module `boost.asio`, then Cppmake will precompile module `my_module`, cmake build `boost`, and precompile module `boost.asio` before finally compiling `source/main.cpp`.)*
+- *(By default, the imported modules and packages form a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph) and will be executed with maximum possible parallelism, depending on your cpu thread count. You can control the level of parallelism using `cppmake --parallel=N`, or force serial compilation through `cppmake --parallel=1`.)*
 
 Another example:
 ```py
