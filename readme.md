@@ -34,9 +34,9 @@ For example:
 ├── module
 │   ├── aaa.cpp
 │   ├── aaa
-│   │   ├── xxx.cpp // aaa.xxx
-│   │   └── yyy.cpp // aaa:yyy
-│   └── bbb.cpp
+│   │   ├── bbb.cpp // aaa.bbb
+│   │   └── ccc.cpp // aaa:ccc
+│   └── ddd.cpp
 ├── source
 │   └── main.cpp
 └── cppmake.py
@@ -112,9 +112,9 @@ Third-party packages should be located `package/`, for example
 ├── module
 │   ├── aaa.cpp
 │   ├── aaa
-│   │   ├── mmm.cpp // aaa.mmm
-│   │   └── nnn.cpp // aaa:nnn
-│   └── bbb.cpp
+│   │   ├── bbb.cpp // aaa.bbb
+│   │   └── ccc.cpp // aaa:ccc
+│   └── ddd.cpp
 ├── source
 │   └── main.cpp
 ├── package
