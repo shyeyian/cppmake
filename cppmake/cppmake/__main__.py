@@ -1,17 +1,28 @@
 from cppmakelib import *
 
 def main():
-    if not exist_dir("package/std"):
+    if not exist_dir("package/std"): # install std as default
         create_dir("package/std/module")
-        open("package/std/cppmake.py",     'w').write(default_std_cppmake)
-        open("package/std/module/std.cpp", 'w').write(default_std_module)
+        open      ("package/std/module/std.cpp", 'w').write(default_std_module)
+        open      ("package/std/cppmake.py",     'w').write(default_std_cppmake)
     Package("std").build()
 
     if Package("main").cppmake is not None:
         getattr(Package("main").cppmake, config.target)()
-    else: # default
+    else: # compile Source("main") as default
         Source("main").compile()
 
+
+
+
+default_std_module = \
+"""
+module;
+#include <include>
+
+export module std;
+#include <export>
+"""
 
 default_std_cppmake = \
 """
@@ -33,13 +44,4 @@ def build():
         writer.write(content[0].replace("module;", ""))
     with open(f"{package.include_dir}/export", 'w') as writer:
         writer.write(content[1])
-"""
-
-default_std_module = \
-"""
-module;
-#include <include>
-
-export module std;
-#include <export>
 """
