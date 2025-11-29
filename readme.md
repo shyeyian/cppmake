@@ -168,9 +168,9 @@ export namespace boost::asio
 will modularize boost.asio into a module.
 
 Builder support: 
-| cmake | include* | makefile | msbuild |
-|:-----:|:--------:|:--------:|:-------:| 
-| ✓     | ✓        | ✓        | ✗       |
+| cmake | include* | makefile | meson | msbuild |
+|:-----:|:--------:|:--------:|:-----:|:-------:| 
+| ✓     | ✓        | ✓        |(soon) | ✗       |
 - ✓: Supported and tested.
 - ✗: Not implemented yet; planned for future releases.
 - *(include: means header-only libraries.)*
