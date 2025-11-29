@@ -1,6 +1,10 @@
-pypi_token.txt
-**/binary
-**/build
-**/dist
 **/__pycache__
-**/*.egg-info
+cppmake/build
+cppmake/cppmake.egg-info
+cppmake/dist
+cppmakelib/build
+cppmakelib/cppmakelib.egg-info
+cppmakelib/dist
+example/binary
+example/package
+pypi_token.txt
