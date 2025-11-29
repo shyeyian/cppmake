@@ -25,7 +25,8 @@ python install.py
 # Getting Started
 
 In a cppmake project: 
-- module `aaa.bbb:ccc` should be placed at `module/aaa/bbb/ccc.cpp`
+- module `aaa.bbb` should be placed at `module/aaa/bbb.cpp`
+- module `aaa:ccc` should be placed at `module/aaa/ccc.cpp`
 - source `main` should be placed at `source/main.cpp`
 - `std` module will be auto-installed.
 
