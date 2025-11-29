@@ -61,7 +61,7 @@ Cppmake provides various configurable options, such as:
 cppmake --compiler=clang++ --std=c++23
 ```
 ```sh
-cppmake --compiler=/opt/gcc/bin/g++ --linker=lld --std=c++26 --type=release --target=make --parallel=$(nproc) --verbose
+cppmake --compiler=/opt/gcc/bin/g++ --linker=lld --std=c++26 --type=release --target=make --parallel=$(nproc)
 ```
 
 System/compiler support:
