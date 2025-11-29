@@ -103,7 +103,7 @@ def test(): # compile and test all units
 ```
 This `cppmake.py` defines 2 targets (switchable via
 `cppmake --target=build|test`) and several configuration rules. You can
-easily extend it using the full Python environment.
+easily extend it with any other Python code.
 
 # Integrating third-party packages
 
