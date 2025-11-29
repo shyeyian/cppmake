@@ -138,7 +138,7 @@ Third-party packages should be located `package/`, for example
 └── cppmake.py
 ```
 
-A `build()` function in the package’s `cppmake.py` needs to be defined to describe how it should be built. For example:
+In `package/boost/cppmake.py` we can define a `build()` function to describe how it should be built. For example:
 ```py
 # package/boost/cppmake.py
 from cppmakelib import *
