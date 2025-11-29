@@ -58,7 +58,10 @@ The output will be generated in the binary directory.
 
 Cppmake provides various configurable options, such as:
 ```sh
-cppmake --target=build --type=release --compiler=clang++ --linker=lld --std=c++23 --parallel=$(nproc)
+cppmake --compiler=clang++ --std=c++23
+```
+```sh
+cppmake --compiler=/opt/gcc/bin/g++ --linker=lld --std=c++26 --type=release --target=make --parallel=$(nproc) --verbose
 ```
 
 System/compiler support:
