@@ -5,7 +5,6 @@ from cppmakelib.error.subprocess   import SubprocessError
 from cppmakelib.execution.run      import async_run
 from cppmakelib.file.file_system   import parent_path, exist_file, create_dir
 from cppmakelib.utility.decorator  import member, once, syncable
-from cppmakelib.utility.sarif      import make_sarif
 from cppmakelib.utility.version    import parse_version
 import re
 
@@ -82,11 +81,13 @@ async def async_precompile(self, file, module_file, object_file, module_dirs=[],
             *[f"-fprebuilt-module-path={module_dir}" for module_dir  in module_dirs                                 ],
             *[f"-I{include_dir}"                     for include_dir in include_dirs                                ],
             *[f"-D{key}={value}"                     for key, value  in (self.define_macros | define_macros).items()],
+            *(["-fdiagnostics-format=sarif", "-Wno-sarif-format-unstable"] if diagnose_file is not None else []),
             "--precompile", "-x", "c++-module", file,
             "-o",                               module_file
         ],
+        print_stderr=False,
         log_command=(True, file),
-        log_stderr =(True, lambda stderr: open(diagnose_file, 'w').write(make_sarif(stderr)) if diagnose_file is not None else None)
+        log_stderr =(True, lambda stderr: open(diagnose_file, 'w').write(stderr.splitlines()[-3]) if diagnose_file is not None and stderr != "" else None)
     )
     await async_run(
         command=[
@@ -109,13 +110,15 @@ async def async_compile(self, file, executable_file, module_dirs=[], include_dir
             *[f"-fprebuilt-module-path={module_dir}" for module_dir  in module_dirs                                 ],
             *[f"-I{include_dir}"                     for include_dir in include_dirs                                ],
             *[f"-D{key}={value}"                     for key, value  in (self.define_macros | define_macros).items()],
+            *(["-fdiagnostics-format=sarif", "-Wno-sarif-format-unstable"] if diagnose_file is not None else []),
             file,
             *(self.link_flags + link_flags),
             *link_files,
             "-o", executable_file,
         ],
+        print_stderr=False,
         log_command=(True, file),
-        log_stderr =(True, lambda stderr: open(diagnose_file, 'w').write(make_sarif(stderr)) if diagnose_file is not None else None)
+        log_stderr =(True, lambda stderr: open(diagnose_file, 'w').write(stderr.splitlines()[-3]) if diagnose_file is not None and stderr != "" else None)
     )
 
 @member(Clang)
