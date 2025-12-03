@@ -10,7 +10,6 @@ for project in ["cppmakelib", "cppmake"]:
         writer.write(pyproject)
     subprocess.run(f"python -m build",                                                                     shell=True, cwd=project, check=True)
     subprocess.run(f"twine upload dist/* --username __token__ --password {open("pypi_token.txt").read()}", shell=True, cwd=project, check=True)
-    subprocess.run(f"pip install --upgrade {project}",                                                     shell=True,              check=True)
     shutil.rmtree(f"{project}/dist")
     shutil.rmtree(f"{project}/{project}.egg-info")
 subprocess.run(f"git add .",            shell=True, check=False)

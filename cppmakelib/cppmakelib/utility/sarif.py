@@ -2,6 +2,17 @@ from cppmakelib.basic.config   import config
 from cppmakelib.utility.inline import raise_
 import re
 
+class ClangWarning:
+    ...
+
+class ClangError:
+    def __init__(self, context):
+        self.message = ...
+        
+
+class ClangNote:
+    ...
+
 class Diagnose:
     def parse(self, context):
         path = r'[\w\.\+-\*/\\]+'
@@ -57,9 +68,16 @@ class SarifResult(dict):
             pass
 
     def mount(self, sarif_related_location):
-        if sarif_related_location.
+        if sarif_related_location.category == SarifRelatedLocation.candicate_:
+            self["locations"][x]
+        if sarif_related_location.category == SarifRelatedLocation.while_:
+            self.mount_cache += [sarif_related_location]
+        elif sarif_related_location.category == SarifRelatedLocation.because:
+            
         
 class SarifRelatedLocation(dict, Diagnose):
+    while_ = 0
+
     def __init__(self, line):
         diagnose = re.match(rf'^({Diagnose.path}):({Diagnose.line}):({Diagnose.column}): ({Diagnose.level}): ({Diagnose.message})$', context.current())
 
