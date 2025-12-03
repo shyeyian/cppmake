@@ -26,7 +26,7 @@ unit_preprocess_logger = ...
 @member(UnitPreprocessLogger)
 def __init__(self):
     try:
-        self._content = json.load(open(f"binary/{config.type}/cache/unit_preprocess.json", 'r'))
+        self._content = json.load(open(f"binary/cache/log.unit_preprocess.json", 'r'))
     except:
         self._content = {
             "file" : {},
@@ -41,8 +41,8 @@ def __init__(self):
 @member(UnitPreprocessLogger)
 def __exit__(self):
     if len(self._content) > 0:
-        create_dir(f"binary/{config.type}/cache")
-        json.dump(self._content, open(f"binary/{config.type}/cache/unit_preprocess.json", 'w'), indent=4)
+        create_dir(f"binary/cache")
+        json.dump(self._content, open(f"binary/cache/log.unit_preprocess.json", 'w'), indent=4)
 
 @member(UnitPreprocessLogger)
 @syncable

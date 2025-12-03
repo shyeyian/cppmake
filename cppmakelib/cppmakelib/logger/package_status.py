@@ -22,7 +22,7 @@ package_status_logger = ...
 @member(PackageStatusLogger)
 def __init__(self):
     try:
-        self._content = json.load(open(f"binary/{config.type}/cache/package_status.json", 'r'))
+        self._content = json.load(open(f"binary/cache/log.package_status.json", 'r'))
     except:
         self._content = {}
     on_exit(self.__exit__)
@@ -30,8 +30,8 @@ def __init__(self):
 @member(PackageStatusLogger)
 def __exit__(self):
     if len(self._content) > 0:
-        create_dir(f"binary/{config.type}/cache")
-        json.dump(self._content, open(f"binary/{config.type}/cache/package_status.json", 'w'), indent=4)
+        create_dir(f"binary/cache")
+        json.dump(self._content, open(f"binary/cache/log.package_status.json", 'w'), indent=4)
 
 @member(PackageStatusLogger)
 @syncable

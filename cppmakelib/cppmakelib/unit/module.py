@@ -34,8 +34,8 @@ class Module:
 async def __ainit__(self, name, file):
     self.name           = name
     self.file           = file
-    self.module_file    = f"binary/{config.type}/module/{self.name.replace(':', '-')}{compiler.module_suffix}"
-    self.object_file    = f"binary/{config.type}/module/{self.name.replace(':', '-')}{compiler.object_suffix}"
+    self.module_file    = f"binary/module/{self.name.replace(':', '-')}{compiler.module_suffix}"
+    self.object_file    = f"binary/module/{self.name.replace(':', '-')}{compiler.object_suffix}"
     self.diagnose_file  = f"binary/cache/module.{self.name.replace(':', '.')}.sarif"
     self.optimize_file  = f"binary/cache/module.{self.name.replace(':', '.')}.optim"
     self.import_package = await Package.__anew__(Package, "main" if self.file.startswith("module/") else self.name.split(':')[0].split('.')[0])

@@ -33,10 +33,10 @@ async def __ainit__(self, name, dir):
     self.git_dir         = f"{self.dir}/git"        if exist_dir (f"{self.dir}/git")        else None
     self.module_dir      = f"{self.dir}/module"     if exist_dir (f"{self.dir}/module")     else raise_(LogicError(f"package does not have a module_dir (with name = {self.name}, module_dir = {self.dir}/module)"))
     self.cppmake_file    = f"{self.dir}/cppmake.py" if exist_file(f"{self.dir}/cppmake.py") else None
-    self.build_dir       = f"binary/{config.type}/package/{self.name}/build"
-    self.install_dir     = f"binary/{config.type}/package/{self.name}/install"
-    self.include_dir     = f"binary/{config.type}/package/{self.name}/install/include"
-    self.lib_dir         = f"binary/{config.type}/package/{self.name}/install/lib"
+    self.build_dir       = f"binary/package/{self.name}/build"
+    self.install_dir     = f"binary/package/{self.name}/install"
+    self.include_dir     = f"binary/package/{self.name}/install/include"
+    self.lib_dir         = f"binary/package/{self.name}/install/lib"
     self.export_modules  = ...
     self.import_packages = ...
     self.compile_flags   = []

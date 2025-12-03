@@ -17,7 +17,7 @@ class Executable:
 @trace
 async def __ainit__(self, name):
     self.name            = name
-    self.executable_file = f"binary/{config.type}/source/{self.name}{system.executable_suffix}"
+    self.executable_file = f"binary/source/{self.name}{system.executable_suffix}"
     self.import_source   = await Source.__anew__(Source, self.name)
 
 @member(Executable)

@@ -34,8 +34,8 @@ class Source:
 async def __ainit__(self, name, file):
     self.name            = name
     self.file            = file
-    self.object_file     = f"binary/{config.type}/source/{self.name}{compiler.object_suffix}"
-    self.executable_file = f"binary/{config.type}/source/{self.name}{system.executable_suffix}"
+    self.object_file     = f"binary/source/{self.name}{compiler.object_suffix}"
+    self.executable_file = f"binary/source/{self.name}{system.executable_suffix}"
     self.diagnose_file   = f"binary/cache/source.{self.name}.sarif"
     self.optimize_file   = f"binary/cache/source.{self.name}.optim"
     self.import_package  = await Package.__anew__(Package, "main")
