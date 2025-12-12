@@ -29,4 +29,4 @@ from .unit.module      import Module
 from .unit.package     import Package
 from .unit.source      import Source
 
-global package
+global self
