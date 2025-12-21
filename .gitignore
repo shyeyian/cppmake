@@ -7,4 +7,3 @@ cppmakelib/cppmakelib.egg-info
 cppmakelib/dist
 example/binary
 example/package
-pypi_token.txt

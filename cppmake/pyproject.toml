@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cppmake"
-version = "127.0.7"
+version = "127.0.8"
 description = "A modern C++ builder based on C++20 Modules."
 authors = [{name = "anonymouspc", email = "shyeyian@petalmail.com"}]
 readme = "readme.md"
