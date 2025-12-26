@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "install",
+            "detail": "python install.py",
+            "group": "build",
+            "command": "python",
+            "args": [
+                "install.py"
+            ]
+        },
+        {
+            "label": "upload",
+            "detail": "python upload.py",
+            "group": "build",
+            "command": "python",
+            "args": [
+                "upload.py"
+            ]
+        }
+    ]
+}
