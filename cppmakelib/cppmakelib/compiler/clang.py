@@ -3,37 +3,44 @@ from cppmakelib.compiler.gcc       import Gcc
 from cppmakelib.error.config       import ConfigError
 from cppmakelib.error.subprocess   import SubprocessError
 from cppmakelib.execution.run      import async_run
-from cppmakelib.file.file_system   import parent_path, exist_file, create_dir, remove_file
-from cppmakelib.system.all         import system
-from cppmakelib.utility.decorator  import member, once, syncable
+from cppmakelib.file.file_system   import parent_path, exist_file, create_dir
+from cppmakelib.utility.decorator  import member, syncable
 from cppmakelib.utility.version    import parse_version
-import re
 
 class Clang(Gcc):
     name          = "clang"
     module_suffix = ".pcm"
     object_suffix = ".o"
-    def           __init__    (self, path="clang++"):                                                                                                                                                                ...
-    async def     __ainit__   (self, path="clang++"):                                                                                                                                                                ...
-    def             preprocess(self, file,                                                                               compile_flags=[],                define_macros={}):                                         ...
-    async def async_preprocess(self, file,                                                                               compile_flags=[],                define_macros={}):                                         ...
-    def             precompile(self, file, module_file, object_file,     module_dirs=[], include_dirs=[],                compile_flags=[],                define_macros={}, diagnose_file=None, optimize_file=None): ...
-    async def async_precompile(self, file, module_file, object_file,     module_dirs=[], include_dirs=[],                compile_flags=[],                define_macros={}, diagnose_file=None, optimize_file=None): ...
-    def             compile   (self, file, object_file, executable_file, module_dirs=[], include_dirs=[], link_files=[], compile_flags=[], link_flags=[], define_macros={}, diagnose_file=None, optimize_file=None): ...
-    async def async_compile   (self, file, object_file, executable_file, module_dirs=[], include_dirs=[], link_files=[], compile_flags=[], link_flags=[], define_macros={}, diagnose_file=None, optimize_file=None): ...
-    def             std_module(self):                                                                                                                                                                                ...
-    async def async_std_module(self):                                                                                                                                                                                ...
+    def           __init__                 (self, path="clang++"):                                                                                                                                            ...
+    async def     __ainit__                (self, path="clang++"):                                                                                                                                            ...
+    def             preprocess             (self, file,                                               include_dirs=[],                compile_flags=[],                define_macros={}):                     ...
+    async def async_preprocess             (self, file,                                               include_dirs=[],                compile_flags=[],                define_macros={}):                     ...
+    def             precompile             (self, file, module_file, object_file,     module_dirs=[], include_dirs=[],                compile_flags=[],                define_macros={}, diagnose_file=None): ...
+    async def async_precompile             (self, file, module_file, object_file,     module_dirs=[], include_dirs=[],                compile_flags=[],                define_macros={}, diagnose_file=None): ...
+    def             compile                (self, file, object_file, executable_file, module_dirs=[], include_dirs=[], link_files=[], compile_flags=[], link_flags=[], define_macros={}, diagnose_file=None): ...
+    async def async_compile                (self, file, object_file, executable_file, module_dirs=[], include_dirs=[], link_files=[], compile_flags=[], link_flags=[], define_macros={}, diagnose_file=None): ...
+    def             get_version            (self):                                                                                                                                                            ...
+    async def async_get_version            (self):                                                                                                                                                            ...
+    def             get_default_stdlib_name(self):                                                                                                                                                            ...
+    async def async_get_default_stdlib_name(self):                                                                                                                                                            ...
+    def             get_stdlib_file        (self):                                                                                                                                                            ...
+    async def async_get_stdlib_file        (self):                                                                                                                                                            ...
+    def             get_stdlib_include_dir (self):                                                                                                                                                            ...
+    async def async_get_stdlib_include_dir (self):                                                                                                                                                            ...
+    def             get_stdlib_link_files  (self):                                                                                                                                                            ...
+    async def async_get_stdlib_link_files  (self):                                                                                                                                                            ...
 
 
 
 @member(Clang)
 @syncable
 async def __ainit__(self, path="clang++"):
-    self.path    = path
-    self.version = await self._async_get_version()
-    self.stdlib  = await self._async_get_stdlib()
+    self.path        = path
+    self.version     = await self.async_get_version()
+    self.stdlib_name = await self.async_get_default_stdlib_name()
     self.compile_flags = [
        f"-std={config.std}",
+       f"-stdlib={self.stdlib_name}",
         *(["-O0", "-g"] if config.type == "debug"   else
           ["-O3",     ] if config.type == "release" else
           ["-Os"      ] if config.type == "size"    else 
@@ -41,7 +48,7 @@ async def __ainit__(self, path="clang++"):
     ]
     self.link_flags = [
         *(["-s"         ] if config.type == "release" or config.type == "size" else []),
-        *(["-lstdc++exp"] if self.stdlib == "libstdc++"                        else [])
+        *(["-lstdc++exp"] if self.stdlib_name == "libstdc++"                   else [])
     ]
     self.define_macros = {
         **({"DEBUG" : "true"} if config.type == "debug"   else 
@@ -51,28 +58,25 @@ async def __ainit__(self, path="clang++"):
 
 @member(Clang)
 @syncable
-async def async_preprocess(self, file, compile_flags=[], define_macros={}):
-    code = open(file, 'r').read()
-    code = re.sub(r'^\s*#include(?!\s*<version>).*$', "", code, flags=re.MULTILINE)
+async def async_preprocess(self, file, include_dirs=[], compile_flags=[], define_macros={}):
     return await async_run(
         command=[
             self.path,
             *(self.compile_flags + compile_flags),
-            *[f"-D{key}={value}" for key, value in (self.define_macros | define_macros).items()],
-            "-E", "-x", "c++", "-",
+            *[f"-I{include_dir}" for include_dir in include_dirs],
+            *[f"-D{key}={value}" for key, value  in (self.define_macros | define_macros).items()],
+            "-E", file,
             "-o", "-"
         ],
-        input_stdin=code,
         print_stdout=False,
         return_stdout=True
     )
 
 @member(Clang)
 @syncable
-async def async_precompile(self, file, module_file, object_file, module_dirs=[], include_dirs=[], compile_flags=[], define_macros={}, diagnose_file=None, optimize_file=None):
+async def async_precompile(self, file, module_file, object_file, module_dirs=[], include_dirs=[], compile_flags=[], define_macros={}):
     create_dir(parent_path(module_file))
     create_dir(parent_path(object_file))
-    create_dir(parent_path(diagnose_file)) if diagnose_file is not None else None
     await async_run(
         command=[
             self.path,
@@ -96,9 +100,8 @@ async def async_precompile(self, file, module_file, object_file, module_dirs=[],
 
 @member(Clang)
 @syncable
-async def async_compile(self, file, object_file, executable_file, module_dirs=[], include_dirs=[], link_files=[], compile_flags=[], link_flags=[], define_macros={}, diagnose_file=None, optimize_file=None):
+async def async_compile(self, file, object_file, executable_file, module_dirs=[], include_dirs=[], link_files=[], compile_flags=[], link_flags=[], define_macros={}, diagnose_file=None):
     create_dir(parent_path(executable_file))
-    create_dir(parent_path(diagnose_file)) if diagnose_file is not None else None
     await async_run(
         command=[
             self.path,
@@ -122,9 +125,43 @@ async def async_compile(self, file, object_file, executable_file, module_dirs=[]
 
 @member(Clang)
 @syncable
-@once
-async def async_std_module(self):
-    if self.stdlib == "libc++":
+async def async_get_version(self):
+    try:
+        version_str = await async_run(command=[self.path, "--version"], return_stdout=True)
+        if "clang version" in version_str.splitlines()[0]:
+            version = parse_version(version_str)
+            if version >= 21:
+                return version
+            else:
+                raise ConfigError(f'clang is too old (with version = {version}, requires >= 21')
+        else:
+            raise ConfigError(f'clang is not valid (with "{self.path} --version" outputs "{version_str.replace('\n', ' ')}")')
+    except SubprocessError as error:
+        raise ConfigError(f'clang is not valid (with "{self.path} --version" outputs "{error.stderr.replace('\n', ' ')}" and exits {error.code})')
+    except FileNotFoundError as error:
+        raise ConfigError(f'clang is not found (with "{self.path} --version" fails "{error}")')
+
+@member(Clang)
+@syncable
+async def async_get_default_stdlib_name(self):
+    verbose_info = await async_run(
+        command=[
+            self.path,
+            *self.compile_flags,
+            "-v",
+        ],
+        print_stderr=config.verbose,
+        return_stderr=True
+    )
+    if "selected gcc installation" not in verbose_info.lower():
+        return "libc++"
+    else:
+        return "libstdc++"    
+
+@member(Clang)
+@syncable
+async def async_get_stdlib_file(self):
+    if self.stdlib_name == "libc++":
         resource_dir = await async_run(
             command=[
                 self.path, "--print-resource-dir"
@@ -137,37 +174,5 @@ async def async_std_module(self):
             return module_file
         else:
             raise ConfigError(f'libc++ module not found (with search_file = {module_file})')
-    elif self.stdlib == "libstdc++":
-        return await Gcc.async_std_module(self)
-        
-@member(Clang)
-async def _async_get_version(self):
-    try:
-        version_str = await async_run(command=[self.path, "--version"], return_stdout=True)
-        if "clang version" in version_str.splitlines()[0]:
-            version = parse_version(version_str)
-            if version >= 21:
-                return version
-            else:
-                raise ConfigError(f'clang is too old (with version = {version}, requires >= 21')
-        else:
-            raise ConfigError(f'clang is not valid (with "{self.path} --version" outputs "{version_str.replace('\n', ' ')}")')
-
-    except SubprocessError as error:
-        raise ConfigError(f'clang is not valid (with "{self.path} --version" outputs "{error.stderr.replace('\n', ' ')}" and exits {error.code})')
-    except FileNotFoundError as error:
-        raise ConfigError(f'clang is not found (with "{self.path} --version" fails "{error}")')
-    
-@member(Clang)
-async def _async_get_stdlib(self):
-    verbose_info = await async_run(
-        command=[
-            self.path, "-v"
-        ],
-        print_stderr=config.verbose,
-        return_stderr=True
-    )
-    if "selected gcc installation" not in verbose_info.lower():
-        return "libc++"
-    else:
-        return "libstdc++"
+    elif self.stdlib_name == "libstdc++":
+        return await Gcc.async_get_stdlib_file(self)
