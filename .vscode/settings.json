@@ -1,4 +1,14 @@
 {
-    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.typeCheckingMode": "standard",
     "python.REPL.enableREPLSmartSend": false,
+    "python.analysis.extraPaths": [
+        "cppmakelib/cppmakelib"
+    ],
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "cppmakelib",
+            "depth": 10
+        }
+    ],
+    "outline.showVariables": false
 }

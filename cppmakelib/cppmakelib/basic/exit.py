@@ -1,13 +1,6 @@
 import atexit
 import sys
 
-def on_exit          (func): ...
-def on_terminate     (func): ...
-def rethrow_exception(exc):  ...
-def current_exception():     ...
-
-
-
 def on_exit(func):
     atexit.register(func)
 
