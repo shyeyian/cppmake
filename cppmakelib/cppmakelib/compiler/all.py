@@ -6,13 +6,19 @@ from cppmakelib.compiler.msvc  import Msvc
 from cppmakelib.error.config   import ConfigError
 
 def _choose_compiler():
-    suberrors = []
+    matches = []
+    errors  = []
     for Compiler in (Clang, Emcc, Gcc, Msvc):
         try:
-            return Compiler(config.compiler)
+            matches += [Compiler(config.compiler)]
         except ConfigError as error:
-            suberrors += [error]
+            errors += [error]
+    if len(matches == 0):
+        raise ConfigError(f'compiler "{config.compiler} is not supported (with matches = {matches})') \
+            from ExceptionGroup('no compiler is matched', errors)
+    elif len(matches == 1):
+        return matches[0]
     else:
-        raise ConfigError(f'compiler "{config.compiler}" is not supported') from ExceptionGroup('no compiler is available', suberrors)
+        raise ConfigError(f'compiler "{config.compiler} is ambiguous (with matches = {matches})')
 
 compiler = _choose_compiler()
