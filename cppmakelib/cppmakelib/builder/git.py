@@ -36,7 +36,8 @@ class Git:
     async def _async_get_version(self):
         return await Version.async_parse(
             name   =self.name, 
-            command=[self.path, '--version'], 
+            command=[self.path, '--version'],
+            check  =lambda stdout: stdout.startswith('git')
             lowest =2
         )
 

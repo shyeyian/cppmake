@@ -38,32 +38,15 @@ class Emcc(Clang):
                {'NDEBUG': 'true'} if config.type == 'release' else 
                {})
         }
-
-    @syncable
-    async def async_link(self, object_file, executable_file, link_flags=[], link_files=[]):
-        await Clang.async_link(
-            self,
-            object_file    =object_file,
-            executable_file=executable_file - system.executable_suffix + '.js',
-            link_flags     =link_flags,
-            link_files     =link_files
-        )
-
+                               
+                                
     async def _async_get_version(self):
-        try:
-            stdout = await async_run(command=[self.path, '--version'], return_stdout=True)
-            if stdout.startswith('emcc'):
-                version = Version.parse_from(stdout)
-                if version >= 4:
-                    return version
-                else:
-                    raise ConfigError(f'emcc is too old (with version = {version}, requires >= 4')
-            else:
-                raise ConfigError(f'emcc is not valid (with "{self.path} --version" returned "{stdout.replace('\n', ' ')}")')
-        except SubprocessError as error:
-            raise ConfigError(f'emcc is not valid (with "{self.path} --version" failed)') from error
-        except FileNotFoundError as error:
-            raise ConfigError(f'emcc is not found (with "{self.path}" not found)') from error
+        return await Version.async_parse(
+            name   =self.name,
+            command=[self.path, '--version'],
+            check  =lambda stdout: stdout.startswith('em++')
+            lowest =4
+        )
         
     async def _async_get_stdlib_module_file(self):
         stdlib_name = await Clang._async_get_stdlib_name(self)

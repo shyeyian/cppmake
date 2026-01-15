@@ -124,23 +124,15 @@ class Gcc:
         )
 
     async def _async_get_version(self):
-        try:
-            stdout = await async_run(command=[self.path, '--version'], return_stdout=True)
-            if stdout.startswith('g++'):
-                version = Version.parse_from(stdout.splitlines()[0])
-                if version >= 15:
-                    return version
-                else:
-                    raise ConfigError(f'gcc is too old (with version = {version}, requires >= 15)')
-            else:
-                raise ConfigError(f'gcc is not valid (with "{self.path} --version" returned "{stdout.replace('\n', ' ')}")')
-        except SubprocessError as error:
-            raise ConfigError(f'gcc is not valid (with "{self.path} --version" failed') from error
-        except FileNotFoundError as error:
-            raise ConfigError(f'gcc is not found (with "{self.path}" not found)') from error
+        return Version.async_parse(
+            name   =self.name
+            command=[self.path, '--version'],
+            check  =lambda stdout: stdout.startswith('g++')
+            lowest =15
+        )
 
     async def _async_get_stdlib_module_file(self):
-        verbose_info = await async_run(
+        stderr = await async_run(
             command=[
                 self.path,
                 *self.compile_flags,
@@ -151,7 +143,7 @@ class Gcc:
             print_stderr=config.verbose, 
             return_stderr=True
         )
-        search_dirs = re.search(r'^#include <...> search starts here:$\n(.*)\n^end of search list.$', verbose_info, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE)
+        search_dirs = re.search(r'^#include <...> search starts here:$\n(.*)\n^end of search list.$', stderr, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE)
         if search_dirs is None:
             raise ConfigError(f'libstdc++ module_file is not found (with "{self.path} -v -E -x c++ -" outputs "# invalid message")')
         search_dirs = [search_dir.strip() for search_dir in search_dirs.group(1).splitlines()]

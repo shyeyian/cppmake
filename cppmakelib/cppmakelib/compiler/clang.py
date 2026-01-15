@@ -95,23 +95,15 @@ class Clang(Gcc):
         )
 
     async def _async_get_version(self):
-        try:
-            stdout = await async_run(command=[self.path, '--version'], return_stdout=True)
-            if 'clang version' in stdout.splitlines()[0]:
-                version = Version.parse_from(stdout.splitlines()[0])
-                if version >= 21:
-                    return version
-                else:
-                    raise ConfigError(f'clang is too old (with version = {version}, requires >= 21')
-            else:
-                raise ConfigError(f'clang is not valid (with "{self.path} --version" returned "{stdout.replace('\n', ' ')}")')
-        except SubprocessError as error:
-            raise ConfigError(f'clang is not valid (with "{self.path} --version" failed') from error
-        except FileNotFoundError as error:
-            raise ConfigError(f'clang is not found (with "{self.path}" not found)') from error
+        return await Version.async_parse(
+            name   =self.name,
+            command=[self.path, '--version'],
+            check  =lambda stdout: stdout.startswith('clang') or 'clang version' in stdout,
+            lowest =21
+        )
 
     async def _async_get_stdlib_name(self):
-        verbose_info = await async_run(
+        stderr = await async_run(
             command=[
                 self.path,
                 *self.compile_flags,
@@ -120,19 +112,18 @@ class Clang(Gcc):
             print_stderr=config.verbose,
             return_stderr=True
         )
-        if 'selected gcc installation' in verbose_info.lower():
+        if 'selected gcc installation' in stderr.lower():
             return 'libstdc++'
         else:
             return 'libc++'    
 
     async def _async_get_stdlib_module_file(self):
         if self.stdlib_name == 'libc++':
-            resource_dir = (await async_run(
-                command=[
-                    self.path, '--print-resource-dir'
-                ],
+            resource_dir = await async_run(
+                command=[self.path, '--print-resource-dir'],
                 return_stdout=True,
-            )).strip()
+            )
+            resource_dir = resource_dir.strip()
             module_file = f'{resource_dir}/../../../share/libc++/v1/std.cppm'
             if exist_file(module_file):
                 return module_file
