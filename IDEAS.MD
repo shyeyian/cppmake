@@ -8,4 +8,6 @@
     - "--machine-abi=xxx",
     注意"--target=xxx"已经被占用为"编译目标"了。
 
-3. **cppmaked**
+    - 用"--architecture"。
+
+3. **cppmaked**不现实
