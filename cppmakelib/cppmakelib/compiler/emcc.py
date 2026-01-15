@@ -7,7 +7,6 @@ from cppmakelib.utility.version    import Version
 class Emcc(Clang):
     name                = 'emcc'
     intermediate_suffix = '.i'
-    preparsed_suffix    = '.pch'
     precompiled_suffix  = '.pcm'
 
     @syncable
@@ -16,7 +15,6 @@ class Emcc(Clang):
         self.path               = path
         self.version            = await self._async_get_version()
         self.stdlib_name        = 'libc++'
-        self.stdlib_header_dir  = ...
         self.stdlib_module_file = await self._async_get_stdlib_module_file()
         self.stdlib_static_file = ...
         self.stdlib_shared_file = ...
@@ -35,8 +33,7 @@ class Emcc(Clang):
                {'NDEBUG': 'true'} if config.type == 'release' else 
                {})
         }
-                               
-                                
+                                      
     async def _async_get_version(self):
         return await Version.async_parse(
             name   =self.name,

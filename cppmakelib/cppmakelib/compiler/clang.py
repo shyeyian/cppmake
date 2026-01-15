@@ -9,7 +9,6 @@ from cppmakelib.utility.version   import Version
 class Clang(Gcc):
     name                = 'clang'
     intermediate_suffix = '.i'
-    preparsed_suffix    = '.pch'
     precompiled_suffix  = '.pcm'
 
     @syncable
@@ -18,7 +17,6 @@ class Clang(Gcc):
         self.path               = path
         self.version            = await self._async_get_version()
         self.stdlib_name        = await self._async_get_stdlib_name()
-        self.stdlib_header_dir  = ...
         self.stdlib_module_file = await self._async_get_stdlib_module_file()
         self.stdlib_static_file = ...
         self.stdlib_shared_file = ...
@@ -39,18 +37,6 @@ class Clang(Gcc):
                {'NDEBUG': 'true'} if config.type == 'release' else 
                {})
         }
-
-    @syncable
-    async def async_preparse(self, header_file, preparsed_file, compile_flags=[], define_macros={}, include_dirs=[], diagnostic_file=None):
-        await Gcc.async_preparse(
-            self,
-            header_file    =header_file,
-            preparsed_file =preparsed_file,
-            compile_flags  =compile_flags,
-            define_macros  =define_macros,
-            include_dirs   =include_dirs,
-            diagnostic_file=None
-        )
 
     @syncable
     async def async_precompile(self, module_file, precompiled_file, object_file, compile_flags=[], define_macros={}, include_dirs=[], import_dirs=[], diagnostic_file=None):

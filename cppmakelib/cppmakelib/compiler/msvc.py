@@ -5,7 +5,6 @@ import sys
 class Msvc:
     name                = 'msvc'
     intermediate_suffix = '.i'
-    preparsed_suffix    = '.pch'
     precompiled_suffix  = '.ixx'
 
     @syncable

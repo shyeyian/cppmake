@@ -11,7 +11,6 @@ import re
 class Gcc:
     name                = 'gcc'
     intermediate_suffix = '.i'
-    preparsed_suffix    = '.gch'
     precompiled_suffix  = '.gcm'
 
     @syncable
@@ -20,7 +19,6 @@ class Gcc:
         self.path               = path
         self.version            = await self._async_get_version()
         self.stdlib_name        = 'libstdc++'
-        self.stdlib_header_dir  = ...
         self.stdlib_module_file = await self._async_get_stdlib_module_file()
         self.stdlib_static_file = ...
         self.stdlib_shared_file = ...
@@ -55,22 +53,6 @@ class Gcc:
             ],
             print_stdout=False,
             return_stdout=True
-        )
-    
-    @syncable
-    async def async_preparse(self, header_file, preparsed_file, compile_flags=[], define_macros={}, include_dirs=[], diagnostic_file=None):
-        create_dir(parent_path(preparsed_file))
-        create_dir(parent_path(diagnostic_file)) if diagnostic_file is not None else None
-        await async_run(
-            command=[
-                self.path,
-                *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
-                *[f'-I{include_dir}' for include_dir in include_dirs],
-                *([f'-fdiagnostics-add-output=sarif:code_file={diagnostic_file}'] if diagnostic_file is not None else []),
-                '-c', '-x', 'c++-header', header_file,
-                '-o', preparsed_file
-            ]
         )
     
     @syncable
