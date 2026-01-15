@@ -1,9 +1,6 @@
 from cppmakelib.basic.config       import config
 from cppmakelib.compiler.clang     import Clang
 from cppmakelib.error.config       import ConfigError
-from cppmakelib.error.subprocess   import SubprocessError
-from cppmakelib.execution.run      import async_run
-from cppmakelib.system.all         import system
 from cppmakelib.utility.decorator  import syncable, unique
 from cppmakelib.utility.version    import Version
 
@@ -44,7 +41,7 @@ class Emcc(Clang):
         return await Version.async_parse(
             name   =self.name,
             command=[self.path, '--version'],
-            check  =lambda stdout: stdout.startswith('em++')
+            check  =lambda stdout: stdout.startswith('em++'),
             lowest =4
         )
         

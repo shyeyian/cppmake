@@ -1,6 +1,5 @@
 from cppmakelib.basic.config         import config
 from cppmakelib.error.config         import ConfigError
-from cppmakelib.error.subprocess     import SubprocessError
 from cppmakelib.execution.run        import async_run
 from cppmakelib.file.file_system     import parent_path, exist_file, create_dir
 from cppmakelib.logger.module_mapper import module_mapper_logger
@@ -124,10 +123,10 @@ class Gcc:
         )
 
     async def _async_get_version(self):
-        return Version.async_parse(
+        return await Version.async_parse(
             name   =self.name
             command=[self.path, '--version'],
-            check  =lambda stdout: stdout.startswith('g++')
+            check  =lambda stdout: stdout.startswith('g++'),
             lowest =15
         )
 

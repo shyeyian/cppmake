@@ -63,7 +63,7 @@ class Cmake:
         return await Version.async_parse(
             name   =self.name,
             command=[self.path, '--version'],
-            check  =lambda stdout: stdout.startswith('cmake')
+            check  =lambda stdout: stdout.startswith('cmake'),
             lowest =4
         )
 

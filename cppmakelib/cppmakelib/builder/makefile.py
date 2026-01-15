@@ -58,10 +58,10 @@ class Makefile:
             raise
 
     async def _async_get_version(self):
-        return Version.async_parse(
+        return await Version.async_parse(
             name   ='makefile',
             command=[self.path, '--version'],
-            check  =lambda stdout: stdout.startswith('GNU Make')
+            check  =lambda stdout: stdout.startswith('GNU Make'),
             lowest =4
         )
             

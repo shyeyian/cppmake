@@ -1,6 +1,3 @@
-from cppmakelib.error.config      import ConfigError
-from cppmakelib.error.subprocess  import SubprocessError
-from cppmakelib.execution.run     import async_run
 from cppmakelib.utility.decorator import syncable, unique
 from cppmakelib.utility.version   import Version
 import sys
@@ -19,7 +16,7 @@ class Msvc:
         assert False
     
     async def _async_get_version(self):
-        return Version.async_parse(
+        return await Version.async_parse(
             name   =self.name,
             command=[self.path],
             pipe   =sys.stderr,

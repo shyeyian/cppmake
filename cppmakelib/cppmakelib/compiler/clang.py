@@ -1,7 +1,6 @@
 from cppmakelib.basic.config      import config
 from cppmakelib.compiler.gcc      import Gcc
 from cppmakelib.error.config      import ConfigError
-from cppmakelib.error.subprocess  import SubprocessError
 from cppmakelib.execution.run     import async_run
 from cppmakelib.file.file_system  import parent_path, exist_file, create_dir
 from cppmakelib.utility.decorator import unique, syncable
