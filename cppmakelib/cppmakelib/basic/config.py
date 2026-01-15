@@ -17,6 +17,10 @@ parser.add_argument('--parallel', type   =lambda n: int(n),             default=
 parser.add_argument('--verbose',  action ='store_true',                 default=False,                help=f'print verbose outputs')
 config = parser.parse_args()
 
+config.module_search_dir='module'
+config.source_search_dir='source'
+config.package_search_dir='package'
+
 sys.dont_write_bytecode = True
 os.chdir(config.project)
 os.environ['LANG'] = 'C'
