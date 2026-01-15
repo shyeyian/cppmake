@@ -34,11 +34,11 @@ class Module:
 async def __ainit__(self, name, file):
     self.name           = name
     self.file           = file
-    self.module_file    = f"binary/module/{self.name.replace(':', '-')}{compiler.module_suffix}"
-    self.object_file    = f"binary/module/{self.name.replace(':', '-')}{compiler.object_suffix}"
-    self.diagnose_file  = f"binary/cache/module.{self.name.replace(':', '.')}.sarif"
-    self.optimize_file  = f"binary/cache/module.{self.name.replace(':', '.')}.optim"
-    self.import_package = await Package.__anew__(Package, "main" if self.file.startswith("module/") else self.name.split(':')[0].split('.')[0])
+    self.module_file    = f'binary/module/{self.name.replace(':', '-')}{compiler.module_suffix}'
+    self.object_file    = f'binary/module/{self.name.replace(':', '-')}{compiler.object_suffix}'
+    self.diagnose_file  = f'binary/cache/module.{self.name.replace(':', '.')}.sarif'
+    self.optimize_file  = f'binary/cache/module.{self.name.replace(':', '.')}.optim'
+    self.import_package = await Package.__anew__(Package, 'main' if self.file.startswith('module/') else self.name.split(':')[0].split('.')[0])
     self.import_modules = await when_all([Module.__anew__(Module, import_) for import_ in await unit_preprocess_logger.async_get_imports(unit=self)])
     self.compile_flags  = self.import_package.compile_flags
     self.define_macros  = self.import_package.define_macros
@@ -53,7 +53,7 @@ async def async_precompile(self):
         await when_all([module.async_precompile() for module in self.import_modules])
         await self.import_package.async_build() if self.import_package is not None else None
         async with scheduler.schedule():
-            print(f"precompile module: {self.name}")
+            print(f'precompile module: {self.name}')
             await compiler.async_precompile(
                 self.file,
                 module_file  =self.module_file,
@@ -78,15 +78,15 @@ async def async_is_precompiled(self):
 
 @member(Module)
 def _name_to_file(name):
-    main_path =                                            f"module/{name.replace('.', '/').replace(':', '/')}.cpp"
-    pack_path = f"package/{name.split(':')[0].split('.')[0]}/module/{name.replace('.', '/').replace(':', '/')}.cpp"
+    main_path =                                            f'module/{name.replace('.', '/').replace(':', '/')}.cpp'
+    pack_path = f'package/{name.split(':')[0].split('.')[0]}/module/{name.replace('.', '/').replace(':', '/')}.cpp'
     return main_path                                                                                                if     exist_file(main_path) and not exist_file(pack_path) else \
            pack_path                                                                                                if not exist_file(main_path) and     exist_file(pack_path) else \
-           raise_(LogicError(f"module is not found (with name = {name}, path = {{{main_path}, {pack_path}}})"))     if not exist_file(main_path) and not exist_file(pack_path) else \
-           raise_(LogicError(f"module is ambiguous (with name = {name}, path = {{{main_path}, {pack_path}}})"))
+           raise_(LogicError(f'module is not found (with name = {name}, path = {{{main_path}, {pack_path}}})'))     if not exist_file(main_path) and not exist_file(pack_path) else \
+           raise_(LogicError(f'module is ambiguous (with name = {name}, path = {{{main_path}, {pack_path}}})'))
 
 @member(Module)
 async def _async_file_to_name(file):
     return await unit_preprocess_logger.async_get_export(file=canonical_path(file))                                       if re.match(r'^(package/\w+/)?module/.*\.cpp$', canonical_path(file)) and     exist_file(file) else \
-           raise_(LogicError(f"module is not found (with file = {file})"))                                                if re.match(r'^(package/\w+/)?module/.*\.cpp$', canonical_path(file)) and not exist_file(file) else \
-           raise_(LogicError(f'module does not match "module/**.cpp" or "package/*/module/**.cpp" (with file = {file})'))
+           raise_(LogicError(f'module is not found (with file = {file})'))                                                if re.match(r'^(package/\w+/)?module/.*\.cpp$', canonical_path(file)) and not exist_file(file) else \
+           raise_(LogicError(f'module does not match 'module/**.cpp' or 'package/*/module/**.cpp' (with file = {file})'))

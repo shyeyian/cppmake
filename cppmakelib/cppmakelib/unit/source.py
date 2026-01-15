@@ -34,11 +34,11 @@ class Source:
 async def __ainit__(self, name, file):
     self.name            = name
     self.file            = file
-    self.object_file     = f"binary/source/{self.name}{compiler.object_suffix}"
-    self.executable_file = f"binary/source/{self.name}{system.executable_suffix}"
-    self.diagnose_file   = f"binary/cache/source.{self.name}.sarif"
-    self.optimize_file   = f"binary/cache/source.{self.name}.optim"
-    self.import_package  = await Package.__anew__(Package, "main")
+    self.object_file     = f'binary/source/{self.name}{compiler.object_suffix}'
+    self.executable_file = f'binary/source/{self.name}{system.executable_suffix}'
+    self.diagnose_file   = f'binary/cache/source.{self.name}.sarif'
+    self.optimize_file   = f'binary/cache/source.{self.name}.optim'
+    self.import_package  = await Package.__anew__(Package, 'main')
     self.import_modules  = await when_all([Module.__anew__(Module, name) for name in await unit_preprocess_logger.async_get_imports(unit=self)])
     self.compile_flags   = self.import_package.compile_flags
     self.link_flags      = self.import_package.link_flags
@@ -52,7 +52,7 @@ async def async_compile(self):
     if not await self.async_is_compiled():
         await when_all([module.async_precompile() for module in self.import_modules])
         async with scheduler.schedule():
-            print(f"compile source: {self.name}")
+            print(f'compile source: {self.name}')
             await compiler.async_compile(
                 self.file,
                 object_file    =self.object_file,
@@ -79,11 +79,11 @@ async def async_is_compiled(self):
 
 @member(Source)
 def _name_to_file(name):
-    return f"source/{name.replace('.', '/')}.cpp"                                                                      if exist_file(f"source/{name.replace('.', '/')}.cpp") else \
-           raise_(LogicError(f"source is not found (with name = {name}, file = source/{name.replace('.', '/')}.cpp)"))
+    return f'source/{name.replace('.', '/')}.cpp'                                                                      if exist_file(f'source/{name.replace('.', '/')}.cpp') else \
+           raise_(LogicError(f'source is not found (with name = {name}, file = source/{name.replace('.', '/')}.cpp)'))
 
 @member(Source)
 def _file_to_name(file):
-    return canonical_path(file).removeprefix("source/").removesuffix(".cpp").replace('/', '.') if (canonical_path(file).startswith("source/") and canonical_path(file).endswith(".cpp")) and     exist_file(file) else \
-           raise_(LogicError(f"source is not found (with file = {file})"))                     if (canonical_path(file).startswith("source/") and canonical_path(file).endswith(".cpp")) and not exist_file(file) else \
-           raise_(LogicError(f'source does not match "source/**.cpp" (with file = {file})'))
+    return canonical_path(file).removeprefix('source/').removesuffix('.cpp').replace('/', '.') if (canonical_path(file).startswith('source/') and canonical_path(file).endswith('.cpp')) and     exist_file(file) else \
+           raise_(LogicError(f'source is not found (with file = {file})'))                     if (canonical_path(file).startswith('source/') and canonical_path(file).endswith('.cpp')) and not exist_file(file) else \
+           raise_(LogicError(f'source does not match 'source/**.cpp' (with file = {file})'))

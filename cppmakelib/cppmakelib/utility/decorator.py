@@ -1,83 +1,29 @@
 from cppmakelib.execution.operation import sync_wait
 from cppmakelib.utility.inline      import assert_
-import asyncio
 import functools
 import inspect
 import threading
-
-def member  (cls ): ...
-def namable (func): ...
-def once    (func): ...
-def syncable(func): ...
-def trace   (func): ...
-def unique  (cls ): ...
-
-
 
 # Every project has its own kind of shit mountain,
 # and the main difference lies in where those mountains are placed.
 # Some pile them up in plain sight, fully transparent to users
 # (for example, C++ templates, which exposes every bit of the mess
-# from their inner implementations but gains "zero-cost abstraction"),
+# from their inner implementations but gains 'zero-cost abstraction'),
 # while others prefer to hide them deep in a corner where no one can ever reach 
 # (for example, the Python GIL).
 #
 # Here, in this project, we've gathered and neatly buried
 # all our shit in the file below. :)
 
-def member(cls):
-    assert inspect.isclass(cls)
-    def memberizer(func):
-        if type(func) != _MultiFunc:
-            assert hasattr(cls, func.__name__) or func.__name__.startswith("_") # Private functions which starts with '_' are not required to be pre-declared in class.
-            setattr(cls, func.__name__, func)
-            try:
-                delattr(inspect.getmodule(func), func.__name__)
-            except:
-                pass
-        else:
-            for subfunc in func:
-                memberizer(subfunc)
-    return memberizer
-
-def namable(func):
-    if type(func) != _MultiFunc:
-        assert inspect.iscoroutinefunction(func)
-        @functools.wraps(func)
-        async def namable_func(arg1, name=None, **kwargs):
-            cls = arg1 if type(arg1) == type else type(arg1)
-            if cls.__qualname__.lower() == "module" or cls.__qualname__.lower() == "source": # Yes, this is shit, but we just make it work.
-                assert (name is not None and len(kwargs) == 0) or (name is None and len(kwargs) == 1 and "file" in kwargs.keys())
-                file = kwargs["file"] if "file" in kwargs else None
-                return await func(arg1, name,       cls.      _name_to_file(name))       if name is not None and file is     None and hasattr(cls,       "_name_to_file") else \
-                       await func(arg1, name, await cls._async_name_to_file(name))       if name is not None and file is     None and hasattr(cls, "_async_name_to_file") else \
-                       await func(arg1,             cls.      _file_to_name(file), file) if name is     None and file is not None and hasattr(cls,       "_file_to_name") else \
-                       await func(arg1,       await cls._async_file_to_name(file), file) if name is     None and file is not None and hasattr(cls, "_async_file_to_name") else \
-                       assert_(False)
-            elif cls.__qualname__.lower() == "package":
-                assert (name is not None and len(kwargs) == 0) or (name is None and len(kwargs) == 1 and "dir" in kwargs.keys())
-                dir = kwargs["dir"] if "dir" in kwargs else None
-                return await func(arg1, name,       cls.      _name_to_dir(name))     if name is not None and dir is     None and hasattr(cls,       "_name_to_dir") else \
-                       await func(arg1, name, await cls._async_name_to_dir(name))     if name is not None and dir is     None and hasattr(cls, "_async_name_to_dir") else \
-                       await func(arg1,             cls.      _dir_to_name(dir), dir) if name is     None and dir is not None and hasattr(cls,       "_dir_to_name") else \
-                       await func(arg1,       await cls._async_dir_to_name(dir), dir) if name is     None and dir is not None and hasattr(cls, "_async_dir_to_name") else \
-                       assert_(False)
-            else:
-                assert False
-        namable_func.__name__ = func.__name__
-        return namable_func
-    else:
-        return _MultiFunc([namable(subfunc) for subfunc in func])
-
 def once(func):
     assert inspect.iscoroutinefunction(func)
     @functools.wraps(func)
     async def once_func(self, *args): # No kwargs
-        if not         hasattr(self, f"_once_{func.__name__}"):
-                       setattr(self, f"_once_{func.__name__}", {})
-        if args not in getattr(self, f"_once_{func.__name__}").keys():
-                       getattr(self, f"_once_{func.__name__}")[args] = asyncio.create_task(func(self, *args))
-        return await   getattr(self, f"_once_{func.__name__}")[args]
+        if not         hasattr(self, f'_once_{func.__name__}'):
+                       setattr(self, f'_once_{func.__name__}', {})
+        if args not in getattr(self, f'_once_{func.__name__}').keys():
+                       getattr(self, f'_once_{func.__name__}')[args] = asyncio.create_task(func(self, *args))
+        return await   getattr(self, f'_once_{func.__name__}')[args]
     return once_func
 
 def syncable(func):
@@ -85,7 +31,7 @@ def syncable(func):
     # For example, when we have 'run(command=...)', do not define 'class Executable: @syncable async_run(self)', use 'async_execute' instead.
     if type(func) != _MultiFunc:
         assert inspect.iscoroutinefunction(func)
-        assert func.__name__.startswith("async_") or func.__name__.startswith("__a") # Should have pre-declaraed the corresponding methods.
+        assert func.__name__.startswith('async_') or func.__name__.startswith('__a') # Should have pre-declaraed the corresponding methods.
         @functools.wraps(func)
         def sync_func(*args, **kwargs):
             value = None
@@ -108,8 +54,8 @@ def syncable(func):
                 return value
             else:
                 raise error
-        sync_func.__name__ = func.__name__.removeprefix("async_") if func.__name__.startswith("async_") else \
-                             func.__name__.replace('__a', '__')   if func.__name__.startswith("__a")    else \
+        sync_func.__name__ = func.__name__.removeprefix('async_') if func.__name__.startswith('async_') else \
+                             func.__name__.replace('__a', '__')   if func.__name__.startswith('__a')    else \
                              assert_(False)
         return _MultiFunc([func, sync_func])
     else:
@@ -124,8 +70,8 @@ def trace(func):
             try:
                 return func(self, *args, **kwargs)
             except Exception as error:
-                if hasattr(error, "add_prefix"):
-                     raise error.add_prefix(f"In {type(self).__qualname__.lower()} {self.name}:")
+                if hasattr(error, 'add_prefix'):
+                     raise error.add_prefix(f'In {type(self).__qualname__.lower()} {self.name}:')
                 else:
                      raise error
         return trace_func
@@ -135,19 +81,19 @@ def trace(func):
             try:
                 return await func(self, *args, **kwargs)
             except Exception as error:
-                if hasattr(error, "add_prefix"):
-                     raise error.add_prefix(f"In {type(self).__qualname__.lower()} {self.name}:")
+                if hasattr(error, 'add_prefix'):
+                     raise error.add_prefix(f'In {type(self).__qualname__.lower()} {self.name}:')
                 else:
                      raise error
     return trace_func
     
 def unique(func):
     assert inspect.isfunction(func)
-    assert func.__name__ == "__ainit__"
+    assert func.__name__ == '__ainit__'
     @functools.wraps(func)
     async def unique_anew(cls, *args, **kwargs):
-        if not hasattr(cls, "_pool"):
-               setattr(cls, "_pool", {})
+        if not hasattr(cls, '_pool'):
+               setattr(cls, '_pool', {})
         if args in cls._pool.keys():
             self = cls._pool[args]
         else:
@@ -155,7 +101,7 @@ def unique(func):
             cls._pool[args] = self
         await func(self, *args, **kwargs)
         return self
-    unique_anew.__name__ = "__anew__"
+    unique_anew.__name__ = '__anew__'
     return _MultiFunc([func, unique_anew])
 
 class _MultiFunc:

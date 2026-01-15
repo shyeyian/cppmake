@@ -16,4 +16,4 @@ def import_file(file, globals={}):
         spec.loader.exec_module(module)
         return module
     except FileNotFoundError:
-        raise ConfigError(f"cppmake.py is not found (with path = {file})")
+        raise ConfigError(f'cppmake.py is not found (with path = {file})')

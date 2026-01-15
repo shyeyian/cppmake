@@ -12,7 +12,7 @@ class LogicError(Exception):
 
 @member(LogicError)
 def __init__(self, message):
-    self.args = [f"{red(bold("fatal error:"))} {message}"]
+    self.args = [f'{red(bold('fatal error:'))} {message}']
     on_terminate(LogicError.__terminate__)
 
 @member(LogicError)

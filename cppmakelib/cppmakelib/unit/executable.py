@@ -17,7 +17,7 @@ class Executable:
 @trace
 async def __ainit__(self, name):
     self.name            = name
-    self.executable_file = f"binary/source/{self.name}{system.executable_suffix}"
+    self.executable_file = f'binary/source/{self.name}{system.executable_suffix}'
     self.import_source   = await Source.__anew__(Source, self.name)
 
 @member(Executable)
@@ -27,6 +27,6 @@ async def __ainit__(self, name):
 async def async_execute(self):
     await self.import_source.async_compile()
     async with scheduler.schedule(scheduler.max):
-        print(f"execute executable: {self.name}")
+        print(f'execute executable: {self.name}')
         await async_run(command=[self.executable_file])
 

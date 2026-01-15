@@ -58,7 +58,7 @@ async def async_run(
                         else:
                             break
                         if tee is not None:
-                            print(line, end="", file=tee)
+                            print(line, end='', file=tee)
                 stdin  = input_stdin
                 stdout = []
                 stderr = []
@@ -75,14 +75,14 @@ async def async_run(
                     proc.wait(),
                     timeout=deadline-time.time() if deadline is not None else None
                 )
-                stdout = "".join(stdout)
-                stderr = "".join(stderr)
+                stdout = ''.join(stdout)
+                stderr = ''.join(stderr)
             except asyncio.TimeoutError:
                 try:
                     proc.kill()
                 except ProcessLookupError:
                     pass
-                raise TimeoutError(f"process {' '.join(command)} timeouts after {timeout} seconds")
+                raise TimeoutError(f'process {' '.join(command)} timeouts after {timeout} seconds')
             if log_stderr[0] == True:
                 log_stderr[1](stderr) 
             if code == 0:
