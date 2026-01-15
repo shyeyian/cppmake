@@ -25,14 +25,14 @@ class Gcc:
         self.stdlib_static_file = ...
         self.stdlib_shared_file = ...
         self.compile_flags = [
-            f'-std={config.std}', '-fmodules', 
+           f'-std={config.std}', '-fmodules', 
             *(['-O0', '-g'] if config.type == 'debug'   else
               ['-O3']       if config.type == 'release' else
               ['-Os']       if config.type == 'size'    else 
               []) 
         ]
         self.link_flags = [
-            f'-fuse-ld={system.linker_path}',
+           f'-fuse-ld={system.linker_path}',
             *(['-s'] if config.type == 'release' or config.type == 'size' else []),
             '-lstdc++exp'
         ]
@@ -48,7 +48,7 @@ class Gcc:
             command=[
                 self.path,
                 *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value in (self.define_macros | define_macros).items()],
+                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
                 *[f'-I{include_dir}' for include_dir in include_dirs],
                 '-E', unit_file,
                 '-o', '-'
@@ -65,7 +65,7 @@ class Gcc:
             command=[
                 self.path,
                 *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value in (self.define_macros | define_macros).items()],
+                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
                 *[f'-I{include_dir}' for include_dir in include_dirs],
                 *([f'-fdiagnostics-add-output=sarif:code_file={diagnostic_file}'] if diagnostic_file is not None else []),
                 '-c', '-x', 'c++-header', header_file,
@@ -82,7 +82,7 @@ class Gcc:
             command=[
                 self.path,
                 *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value in (self.define_macros | define_macros).items()],
+                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
                 *[f'-I{include_dir}' for include_dir in include_dirs],
                 *[f'-fmodule-mapper={module_mapper_logger.get_mapper(import_dir)}' for import_dir in import_dirs],
                 *([f'-fdiagnostics-add-output=sarif:code_file={diagnostic_file}'] if diagnostic_file is not None else []),
@@ -100,7 +100,7 @@ class Gcc:
             command=[
                 self.path,
                 *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value in (self.define_macros | define_macros).items()],
+                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
                 *[f'-I{include_dir}' for include_dir in include_dirs],
                 *[f'-fmodule-mapper={module_mapper_logger.get_mapper(import_dir)}' for import_dir in import_dirs],
                 *([f'-fdiagnostics-add-output=sarif:code_file={diagnostic_file}'] if diagnostic_file is not None else []),

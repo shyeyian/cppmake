@@ -23,8 +23,8 @@ class Clang(Gcc):
         self.stdlib_static_file = ...
         self.stdlib_shared_file = ...
         self.compile_flags = [
-            f'-std={config.std}',
-            f'-stdlib={self.stdlib_name}',
+           f'-std={config.std}',
+           f'-stdlib={self.stdlib_name}',
             *(['-O0', '-g'] if config.type == 'debug'   else
               ['-O3']       if config.type == 'release' else
               ['-Os']       if config.type == 'size'    else 
@@ -60,7 +60,7 @@ class Clang(Gcc):
             command=[
                 self.path,
                 *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value in (self.define_macros | define_macros).items()],
+                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
                 *[f'-I{include_dir}' for include_dir in include_dirs],
                 *[f'-fprebuilt-module-path={import_dir}' for import_dir in import_dirs],
                 '--precompile', '-x', 'c++-module', module_file,
@@ -84,7 +84,7 @@ class Clang(Gcc):
             command=[
                 self.path,
                 *(self.compile_flags + compile_flags),
-                *[f'-D{key}={value}' for key, value in (self.define_macros | define_macros).items()],
+                *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
                 *[f'-I{include_dir}' for include_dir in include_dirs],
                 *[f'-fprebuilt-module-path={import_dir}' for import_dir in import_dirs],
                 '-c', '-x', 'c++', source_file,

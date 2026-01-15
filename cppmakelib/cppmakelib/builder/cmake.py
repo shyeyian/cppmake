@@ -3,7 +3,7 @@ from cppmakelib.compiler.all      import compiler
 from cppmakelib.execution.run     import async_run
 from cppmakelib.file.file_system  import create_dir, remove_dir
 from cppmakelib.utility.algorithm import recursive_collect
-from cppmakelib.utility.decorator import syncable, unique
+from cppmakelib.utility.decorator import syncable, unique, once
 from cppmakelib.utility.version   import Version
 
 class Cmake:
@@ -22,13 +22,13 @@ class Cmake:
             await async_run(
                 command=[
                     self.path,
-                    '-S', f'{package.git_dir}/{dir}',
+                    '-S', package.git_dir,
                     '-B', package.build_dir,
-                    f'-DCMAKE_BUILD_TYPE={config.type}',
-                    f'-DCMAKE_CXX_COMPILER={compiler.path}',
-                    f'-DCMAKE_CXX_FLAGS={' '.join(compiler.compile_flags + package.compile_flags)}',
-                    f'-DCMAKE_PREFIX_PATH={';'.join(recursive_collect(package, next=lambda package: package.depend_packages, collect=lambda package: package.install_dir, root=False))}',
-                    f'-DCMAKE_INSTALL_PREFIX={package.install_dir}',
+                   f'-DCMAKE_BUILD_TYPE={config.type}',
+                   f'-DCMAKE_CXX_COMPILER={compiler.path}',
+                   f'-DCMAKE_CXX_FLAGS={' '.join(compiler.compile_flags + package.compile_flags)}',
+                   f'-DCMAKE_PREFIX_PATH={';'.join(recursive_collect(package, next=lambda package: package.depend_packages, collect=lambda package: package.install_dir, root=False))}',
+                   f'-DCMAKE_INSTALL_PREFIX={package.install_dir}',
                     '-DCMAKE_INSTALL_LIBDIR=lib',
                     *args
                 ]

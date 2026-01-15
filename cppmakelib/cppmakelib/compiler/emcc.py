@@ -21,7 +21,7 @@ class Emcc(Clang):
         self.stdlib_static_file = ...
         self.stdlib_shared_file = ...
         self.compile_flags = [
-        f'-std={config.std}', '-fexceptions',
+           f'-std={config.std}', '-fexceptions',
             *(['-O0', '-g'] if config.type == 'debug'   else
               ['-O3']       if config.type == 'release' else
               ['-Os']       if config.type == 'size'    else 
