@@ -1,3 +1,9 @@
+1. Why we do not use preparsed headers?
+    - Preparsed headers in
+        - gcc: only one `.gcm` available in one unit.
+        - clang:  
+
+
 1. `module.__init__()`依赖`package.build()`, 这样`compiler.preprocess_file()`就能正常工作了。
  - 分布式编译始终需要`compiler.preprocess_file()`。
 

@@ -1,28 +1,59 @@
+import pathlib
 import re
 import shutil
 import subprocess
+import sys
+
+# Dependencies
+try:
+    import build
+except ImportError:
+    subprocess.run(
+        args=[sys.executable, '-m' ,'pip', 'install', 'build'], 
+        check=True
+    )
+try:
+    import twine
+except ImportError:
+    subprocess.run(
+        args=[sys.executable, '-m', 'pip', 'install', 'twine'], 
+        check=True
+    )
 
 # Git pull
-subprocess.run(f"git pull", shell=True, check=False)
+subprocess.run(['git', 'pull'])
 
 # Update subprojects
-for project in ["cppmakelib", "cppmake"]:
+for project in ['cppmakelib', 'cppmake', 'cppmaked']:
     # Increment version
-    with open(f"{project}/pyproject.toml", 'r') as reader:
+    with open(pathlib.Path()/project/'pyproject.toml', 'r') as reader:
         pyproject = reader.read()
     pyproject = re.sub(r'^version = "(\d+)\.(\d+)\.(\d+)"$', lambda match: f'version = "{match.group(1)}.{match.group(2)}.{int(match.group(3)) + 1}"', pyproject, flags=re.MULTILINE)
-    with open(f"{project}/pyproject.toml", 'w') as writer:
+    with open(pathlib.Path()/project/'pyproject.toml', 'w') as writer:
         writer.write(pyproject)
 
     # Twine upload
     try:
-        subprocess.run(f"python -m build",                                                                     shell=True, cwd=project, check=True)
-        subprocess.run(f"twine upload dist/* --username __token__ --password {open("pypi-token.txt").read()}", shell=True, cwd=project, check=True)
+        subprocess.run(
+            args=[sys.executable, '-m', 'build'], 
+            cwd=project, 
+            check=True
+        ),
+        subprocess.run(
+            args=[
+                sys.executable, '-m', 
+                'twine', 'upload', 'dist/*', 
+                '--username', '__token__', 
+                '--password', open('pypi-token.txt').read()
+            ], 
+            cwd=project, 
+            check=True
+        )
     finally:
-        shutil.rmtree(f"{project}/dist")
-        shutil.rmtree(f"{project}/{project}.egg-info")
+        shutil.rmtree(pathlib.Path()/project/'dist')
+        shutil.rmtree(pathlib.Path()/project/f'{project}.egg-info')
 
 # Git push
-subprocess.run(f"git add .",            shell=True, check=False)
-subprocess.run(f"git commit -m update", shell=True, check=False)
-subprocess.run(f"git push",             shell=True, check=False)
+subprocess.run(['git', 'add', '.'])
+subprocess.run(['git', 'commit', '-m', 'update'])
+subprocess.run(['git', 'push'])

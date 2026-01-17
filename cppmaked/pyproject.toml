@@ -3,15 +3,15 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cppmake"
+name = "cppmaked"
 version = "127.0.14"
 description = "A modern C++ builder based on C++20 Modules."
 authors = [{name = "shyeyian", email = "shyeyian@icloud.com"}]
 readme = "readme.md"
 requires-python = ">=3.13"
 license = "MIT"
-scripts = {cppmake = "cppmake.__main__:main"}
+scripts = {cppmaked = "cppmaked.__main__:main"}
 dependencies = ["cppmakelib"]
 
 [tool.setuptools.packages.find]
-include = ["cppmake*"]
+include = ["cppmaked*"]
