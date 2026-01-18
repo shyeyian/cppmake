@@ -1,5 +1,5 @@
 {
-    "python.analysis.typeCheckingMode": "off", // Python is a dynamic type language. It should not have a type check.
+    "python.analysis.typeCheckingMode": "strict", // Python is a dynamic type language. It should not have a type check.
     "python.REPL.enableREPLSmartSend": false,
     "outline.showVariables": false
 }

@@ -12,7 +12,7 @@ class Makefile:
     @unique
     async def __ainit__(self, path='make'):
         self.path    = path
-        self.version = await self.async_get_version()
+        self.version = await self._async_get_version()
 
     @syncable
     async def async_build(self, package, file='configure', args=[]):
@@ -24,7 +24,7 @@ class Makefile:
                    f'CXX={compiler.path}',
                    f'CXXFLAGS={' '.join(compiler.compile_flags + package.compile_flags)}'
                    f'--prefix={absolute_path(package.install_dir)}',
-                   f'--libdir={absolute_path(package.install_dir)}/lib'
+                   f'--libdir={absolute_path(package.install_dir)/'lib'}',
                     *args
                 ],
                 cwd=package.build_dir

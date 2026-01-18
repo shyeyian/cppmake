@@ -1,7 +1,13 @@
 from cppmakelib.basic.config  import config
 from cppmakelib.utility.color import yellow
+import pathlib
 import os
 import shutil
+
+Path = pathlib.Path
+
+def current_path(path):
+    return os.path.curdir
 
 def absolute_path(path):
     return os.path.abspath(path)

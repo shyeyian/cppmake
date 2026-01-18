@@ -1,5 +1,6 @@
 from cppmakelib.execution.operation import sync_wait
 from cppmakelib.utility.inline      import assert_
+import asyncio
 import functools
 import inspect
 import threading
@@ -102,7 +103,7 @@ def unique(func):
         await func(self, *args, **kwargs)
         return self
     unique_anew.__name__ = '__anew__'
-    return _MultiFunc([func, unique_anew])
+    return _MultiFunc([func, once(unique_anew)])
 
 class _MultiFunc:
     def __init__(self, funcs):

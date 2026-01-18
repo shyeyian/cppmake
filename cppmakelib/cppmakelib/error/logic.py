@@ -1,9 +1,6 @@
 from cppmakelib.utility.color import red, bold
 
 class LogicError(Exception):
-    def __init__(self, message):
-        super().__init__(f'{red(bold('fatal error:'))} {message}')
-
-    def add_prefix(self, prefix):
-        return LogicError(f'{prefix}\n{self}')
+    def __str__(self):
+        return f'{red(bold('fatal error:'))} {super().__str__()}'
 
