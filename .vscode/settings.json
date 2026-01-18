@@ -1,5 +1,11 @@
 {
-    "python.analysis.typeCheckingMode": "strict", // Python is a dynamic type language. It should not have a type check.
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportPrivateUsage": "none",
+        "reportRedeclaration": "none",
+        "reportUnusedFunction": "none",
+        "reportUnusedImport": "warning"
+    },
     "python.REPL.enableREPLSmartSend": false,
     "outline.showVariables": false
 }

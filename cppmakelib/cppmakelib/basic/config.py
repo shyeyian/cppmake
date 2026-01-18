@@ -3,7 +3,9 @@ import argparse
 import os
 import sys
 
-config = ...
+config: argparse.Namespace
+
+
 
 parser = argparse.ArgumentParser()
 parser.usage = 'cppmake [project] [options...]'
