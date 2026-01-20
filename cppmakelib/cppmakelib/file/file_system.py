@@ -57,21 +57,17 @@ def __str__(self: Path) -> str:
 
 @member(Path)
 def __truediv__(self: Path, filesystem_str: str | Path) -> Path:
-    if type(filesystem_str) is str:
+    if isinstance(filesystem_str, str):
         return Path._from_handle(self._handle / filesystem_str)
-    elif type(filesystem_str) is Path:
+    else: # isinstance(filesystem_str, Path)
         return Path._from_handle(self._handle / filesystem_str._handle)
-    else:
-        return NotImplemented
     
 @member(Path)
 def __rtruediv__(self: Path, filesystem_str: str | Path) -> Path:
-    if type(filesystem_str) is str:
+    if isinstance(filesystem_str, str):
         return Path._from_handle(filesystem_str / self._handle)
-    elif type(filesystem_str) is Path:
+    else: # isinstance(filesystem_str, Path)
         return Path._from_handle(filesystem_str._handle / self._handle)
-    else:
-        return NotImplemented
     
 @member(Path)
 @staticmethod
