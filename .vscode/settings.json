@@ -1,10 +1,12 @@
 {
     "python.analysis.typeCheckingMode": "strict",
     "python.analysis.diagnosticSeverityOverrides": {
+        "reportNoOverloadImplementation": "none",
         "reportPrivateUsage": "none",
         "reportRedeclaration": "none",
         "reportUnusedFunction": "none",
-        "reportUnusedImport": "warning"
+        "reportUnusedImport": "warning",
+        "reportUnusedVariable": "warning"
     },
     "python.REPL.enableREPLSmartSend": false,
     "outline.showVariables": false

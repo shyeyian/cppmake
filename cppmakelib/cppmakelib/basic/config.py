@@ -1,23 +1,51 @@
-from cppmakelib.system.all import system
+from cppmakelib.file.file_system  import Path, UnresolvedPath
+from cppmakelib.system.all        import system
+from cppmakelib.utility.decorator import member
 import argparse
+import functools
 import os
 import sys
+import typing
 
-config: argparse.Namespace
+class Config(argparse.Namespace):
+    def __init__    (self)                            -> None: ...
+    @functools.wraps(argparse.ArgumentParser.add_argument)
+    def add_argument(self, *args: ..., **kwargs: ...) -> None: ...
+    project : Path
+    target  : str
+    compiler: UnresolvedPath
+    linker  : UnresolvedPath
+    std     : typing.Literal['c++20'] | typing.Literal['c++23']   | typing.Literal['c++26']
+    type    : typing.Literal['debug'] | typing.Literal['release'] | typing.Literal['size']
+    jobs    : int
+    verbose : bool
+
+    _parser: argparse.ArgumentParser
+
+config: Config
 
 
 
-parser = argparse.ArgumentParser()
-parser.usage = 'cppmake [project] [options...]'
-parser.add_argument('project',    nargs='?',                            default='.',                  help=f'path to C++ project dir   (example: ., .., /home/my/project; requires: containing cppmake.py; default: .)')
-parser.add_argument('--target',                                         default='make',               help=f'select cppmake target     (example: make, build, test; requires: defined in cppmake.py; default: make)')
-parser.add_argument('--compiler',                                       default=system.compiler_path, help=f'use specific C++ compiler (example: g++, /usr/bin/g++, /opt/homebrew/clang++; requires: executable; default: {system.compiler_path})')
-parser.add_argument('--linker',                                         default=system.linker_path,   help=f'use specific C++ linker   (example: ld, lld; requires: executable; default: {system.linker_path})')
-parser.add_argument('--std',      choices=['c++20', 'c++23', 'c++26'],  default='c++26',              help=f'use specific C++ standard (default: c++26)')
-parser.add_argument('--type',     choices=['debug', 'release', 'size'], default='debug',              help=f'choose config type        (default: debug)')
-parser.add_argument('--parallel', type   =lambda n: int(n),             default=os.cpu_count(),       help=f'allow maximun concurrency (default: {os.cpu_count()})')
-parser.add_argument('--verbose',  action ='store_true',                 default=False,                help=f'print verbose outputs')
-config = parser.parse_args()
+@member(Config)
+def __init__(self: Config) -> None:
+    self._parser = argparse.ArgumentParser()
+    self._parser.usage = 'cppmake [project] [options...]'
+    self._parser.add_argument('project',    nargs='?',                            default='.',                  help=f'path to C++ project dir   (example: ., .., /home/my/project; requires: containing cppmake.py; default: .)')
+    self._parser.add_argument('--target',                                         default='make',               help=f'select cppmake target     (example: make, build, test; requires: defined in cppmake.py; default: make)')
+    self._parser.add_argument('--compiler', type   =lambda c: UnresolvedPath(c),  default=system.compiler,      help=f'use specific C++ compiler (example: g++, /usr/bin/g++, /opt/homebrew/clang++; requires: executable; default: {system.compiler_path})')
+    self._parser.add_argument('--linker',   type   =lambda l: UnresolvedPath(l),  default=system.linker,        help=f'use specific C++ linker   (example: ld, lld; requires: executable; default: {system.linker_path})')
+    self._parser.add_argument('--std',      choices=['c++20', 'c++23', 'c++26'],  default='c++26',              help=f'use specific C++ standard (default: c++26)')
+    self._parser.add_argument('--type',     choices=['debug', 'release', 'size'], default='debug',              help=f'choose config type        (default: debug)')
+    self._parser.add_argument('--jobs',     type   =lambda n: int(n),             default=os.cpu_count(),       help=f'allow maximun concurrency (default: {os.cpu_count()})')
+    self._parser.add_argument('--verbose',  action ='store_true',                 default=False,                help=f'print verbose outputs')
+    self._parser.parse_args(namespace=self)
+
+@member(Config)
+def add_argument(self: Config, *args: ..., **kwargs: ...) -> None:
+    self._parser.add_argument(*args, **kwargs)
+    self._parser.parse_args(namespace=self)
+
+config = Config()
 
 sys.dont_write_bytecode = True
 os.chdir(config.project)

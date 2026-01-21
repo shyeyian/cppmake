@@ -1,22 +1,20 @@
 from cppmakelib.utility.decorator import member
 from cppmakelib.utility.time      import Time
-import pathlib
+import os
 import shutil
 import typing
 
-class Path:
-    def __init__     (self, filesystem_str: str = '')   -> None: ...
-    def absolute_path(self)                             -> Path: ...
-    def relative_path(self, from_path: Path)            -> Path: ...
-    def parent_path  (self)                             -> Path: ...
-    def root_path    (self)                             -> Path: ...
-    def __str__      (self)                             -> str : ...
-    def __truediv__  (self, filesystem_str: str | Path) -> Path: ...
-    def __rtruediv__ (self, filesystem_str: str | Path) -> Path: ...
-    
-    _handle: pathlib.Path
-    @staticmethod
-    def _from_handle(handle: pathlib.Path) -> Path: ...
+class Path(str):
+    def __new__      (cls,  path: str)       -> Path: ...
+    def __truediv__  (self, path: str)       -> Path: ...
+    def __rtruediv__ (self, path: str)       -> Path: ...
+    def absolute_path(self)                  -> Path: ...
+    def relative_path(self, from_path: Path) -> Path: ...
+    def parent_path  (self)                  -> Path: ...
+    def root_path    (self)                  -> Path: ...
+
+class UnresolvedPath(str):
+    def resolved_path(self) -> Path: ...
 
 def exist_file (file     : Path)                -> bool                 : ...
 def exist_dir  (dir      : Path)                -> bool                 : ...
@@ -32,81 +30,73 @@ def iterate_dir(dir      : Path)                -> typing.Iterable[Path]: ...
 
 
 @member(Path)
-def __init__(self: Path, filesystem_str: str = '') -> None:
-    self._handle = pathlib.Path(filesystem_str)
+def __new__(cls: type[Path], path: str) -> Path:
+    return super(cls, cls).__new__(cls, path)
 
 @member(Path)
-def absolute(self: Path) -> Path:
-    return Path._from_handle(self._handle.absolute())
+def __truediv__(self: Path, path: str) -> Path:
+    return Path(os.path.join(self, path))
+    
+@member(Path)
+def __rtruediv__(self: Path, path: str) -> Path:
+    return Path(os.path.join(path, self))
 
 @member(Path)
-def relative(self: Path, from_: Path) -> Path:
-    return Path._from_handle(self._handle.relative_to(from_._handle))
+def absolute_path(self: Path) -> Path:
+    return Path(os.path.abspath(self))
 
 @member(Path)
-def parent(self: Path, from_: Path) -> Path:
-    return Path._from_handle(self._handle.parent)
+def relative_path(self: Path, from_: Path) -> Path:
+    return Path(os.path.relpath(self, from_))
+
+@member(Path)
+def parent_path(self: Path) -> Path:
+    return Path(os.path.dirname(self))
 
 @member(Path)
 def root_path(self: Path) -> Path:
-    return Path(self._handle.root)
+    return Path(os.path.splitroot(self)[0])
 
-@member(Path)
-def __str__(self: Path) -> str:
-    return self._handle.__str__()
-
-@member(Path)
-def __truediv__(self: Path, filesystem_str: str | Path) -> Path:
-    if isinstance(filesystem_str, str):
-        return Path._from_handle(self._handle / filesystem_str)
-    else: # isinstance(filesystem_str, Path)
-        return Path._from_handle(self._handle / filesystem_str._handle)
-    
-@member(Path)
-def __rtruediv__(self: Path, filesystem_str: str | Path) -> Path:
-    if isinstance(filesystem_str, str):
-        return Path._from_handle(filesystem_str / self._handle)
-    else: # isinstance(filesystem_str, Path)
-        return Path._from_handle(filesystem_str._handle / self._handle)
-    
-@member(Path)
-@staticmethod
-def _from_handle(handle: pathlib.Path) -> Path:
-    path = Path()
-    path._handle = handle
-    return path
+@member(UnresolvedPath)
+def resolved_path(self: UnresolvedPath) -> Path:
+    resolved = shutil.which(self)
+    if resolved is None:
+        raise FileNotFoundError(self)
+    return Path(resolved)
 
 def exist_file(file: Path) -> bool:
-    return file._handle.is_file()
+    return os.path.isfile(file)
 
 def exist_dir(dir: Path) -> bool:
-    return dir._handle.is_dir()
+    return os.path.isdir(dir)
 
 def create_file(file: Path) -> None:
     create_dir(file.parent_path())
-    file._handle.touch(exist_ok=True)
+    open(file, 'w')
 
 def create_dir(dir: Path) -> None:
-    dir._handle.mkdir(parents=True, exist_ok=True)
+    os.makedirs(dir, exist_ok=True)
 
 def copy_file(from_file: Path, to_file: Path) -> None:
-    from_file._handle.copy(to_file._handle)
+    shutil.copyfile(from_file, to_file)
 
 def copy_dir(from_dir: Path, to_dir: Path) -> None:
-    from_dir._handle.copy(to_dir._handle)
+    shutil.copytree(from_dir, to_dir, dirs_exist_ok=True)
 
 def remove_file(file: Path) -> None:
-    file._handle.unlink(missing_ok=True)
+    try:
+        os.remove(file)
+    except FileNotFoundError:
+        pass
 
 def remove_dir(dir: Path) -> None:
-    shutil.rmtree(dir._handle, ignore_errors=True)
+    shutil.rmtree(dir, ignore_errors=True)
 
 def mtime_file(file: Path) -> Time:
-    return file._handle.stat().st_mtime
+    return Time(os.stat(file).st_mtime)
 
 def iterate_dir(dir: Path) -> typing.Iterable[Path]:
-    for _subhandle in dir._handle.rglob('*'):
-        if _subhandle.is_file():
-            yield Path._from_handle(_subhandle)
+    for root, _, filenames in os.walk(dir):
+        for filename in filenames:
+            yield Path(root)/filename
 
-    

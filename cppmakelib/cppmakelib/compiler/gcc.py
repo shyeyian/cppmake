@@ -2,7 +2,7 @@ from cppmakelib.basic.config         import config
 from cppmakelib.error.config         import ConfigError
 from cppmakelib.error.subprocess     import SubprocessError
 from cppmakelib.execution.run        import async_run
-from cppmakelib.file.file_system     import Path, UnresolvedPath, create_dir, exist_file, resolve_path
+from cppmakelib.file.file_system     import Path, UnresolvedPath, create_dir, exist_file
 from cppmakelib.logger.module_mapper import module_mapper_logger
 from cppmakelib.system.all           import system
 from cppmakelib.utility.decorator    import member, syncable, unique
@@ -21,18 +21,18 @@ class Gcc:
     async def async_compile   (self, source_file: Path,                          object_file: Path, compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[Path] = [], import_dirs: list[Path] = [], diagnostic_file: Path | None = None) -> None      : ...
     def             link      (self, object_file: Path, executable_file  : Path,                    link_flags   : list[str] = [],                                     link_files  : list[Path] = [])                                                                    -> None      : ...
     async def async_link      (self, object_file: Path, executable_file  : Path,                    link_flags   : list[str] = [],                                     link_files  : list[Path] = [])                                                                    -> None      : ...
-    name              : str = 'gcc'
-    intermediate_file : str = '.i'
-    interface_file    : str = '.gcm'
-    file              : Path
-    version           : Version
-    stdlib_name       : str
-    stdlib_module_file: Path
-    stdlib_static_file: Path
-    stdlib_shared_file: Path
-    compile_flags     : list[str]
-    link_flags        : list[str]
-    define_macros     : dict[str, str]
+    name               : str = 'gcc'
+    preprocessed_suffix: str = '.i'
+    precompiled_suffix : str = '.gcm'
+    file               : Path
+    version            : Version
+    stdlib_name        : str = 'libstdc++'
+    stdlib_module_file : Path
+    stdlib_static_file : Path
+    stdlib_shared_file : Path
+    compile_flags      : list[str]
+    link_flags         : list[str]
+    define_macros      : dict[str, str]
 
     async def _async_get_version           (self) -> Version: ...
     async def _async_get_stdlib_module_file(self) -> Path   : ...
@@ -56,9 +56,8 @@ async def __ainit__(
     self: Gcc, 
     file: Path | UnresolvedPath = UnresolvedPath('g++')
 ) -> None:
-    self.file               = file if isinstance(file, Path) else resolve_path(file)
+    self.file               = file if isinstance(file, Path) else file.resolved_path()
     self.version            = await self._async_get_version()
-    self.stdlib_name        = 'libstdc++'
     self.stdlib_module_file = await self._async_get_stdlib_module_file()
     self.compile_flags = [
        f'-std={config.std}', '-fmodules', 
@@ -68,7 +67,7 @@ async def __ainit__(
           []) 
     ]
     self.link_flags = [
-       f'-fuse-ld={system.linker_path}',
+       f'-fuse-ld={system.linker}',
         *(['-s'] if config.type == 'release' or config.type == 'size' else []),
         '-lstdc++exp'
     ]
@@ -185,12 +184,12 @@ async def _async_get_version(self: Gcc) -> Version:
             return_stdout=True
         )
     except SubprocessError as error:
-        raise ConfigError(f'gcc is not valid (with file = {self.file})') from error
+        raise ConfigError(f'gcc check failed (with file = {self.file})') from error
     if not stdout.startswith('g++'):
-        raise ConfigError(f'gcc is not valid (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "g++ ...")')
+        raise ConfigError(f'gcc check failed (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "g++ ...")')
     version = Version.parse(stdout)
     if version < 15:
-        raise ConfigError(f'gcc is too old (with file = {self.file}, version = {version}, requires = 15+)')
+        raise ConfigError(f'gcc version is too old (with file = {self.file}, version = {version}, requires = 15+)')
     return version
 
 @member(Gcc)

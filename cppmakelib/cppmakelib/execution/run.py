@@ -9,29 +9,26 @@ import asyncio
 import sys
 import typing
 
-def run(
-    file          : Path,
-    args          : list[str] = [], 
-    cwd           : Path      = Path('.'), 
-    print_command : bool      = config.verbose,
-    print_stdout  : bool      = config.verbose,
-    print_stderr  : bool      = True,
-    return_stdout : bool      = False,
-    return_stderr : bool      = False,
-) -> None | str: ...
+def             run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, return_stdout: bool = False, return_stderr: bool = False) -> None | str | tuple[str, str]: ...
+async def async_run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, return_stdout: bool = False, return_stderr: bool = False) -> None | str | tuple[str, str]: ...
 
-async def async_run(
-    file          : Path,
-    args          : list[str] = [], 
-    start_dir     : Path      = Path('.'), 
-    print_command : bool      = config.verbose,
-    print_stdout  : bool      = config.verbose,
-    print_stderr  : bool      = True,
-    return_command: bool      = False,
-    return_stdout : bool      = False,
-    return_stderr : bool      = False,
-) -> None | str: ...
-
+if typing.TYPE_CHECKING:
+    @typing.overload
+    def             run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[False] = False) -> None: ...
+    @typing.overload
+    def             run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[False] = False) -> str: ...
+    @typing.overload
+    def             run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[True]         ) -> str: ...
+    @typing.overload
+    def             run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[True]         ) -> tuple[str, str]: ...
+    @typing.overload
+    async def async_run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[False] = False) -> None: ...
+    @typing.overload
+    async def async_run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[False] = False) -> str: ...
+    @typing.overload
+    async def async_run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[True]         ) -> str: ...
+    @typing.overload
+    async def async_run(file: Path, args: list[str] = [], cwd: Path = Path('.'), print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[True]         ) -> tuple[str, str]: ...
 
 
 
@@ -47,38 +44,39 @@ async def async_run(
     print_stderr  : bool      = True,
     return_stdout : bool      = False,
     return_stderr : bool      = False,
-) -> None | str | tuple[str, str]:
+) -> None | str:
     async with _internal_scheduler.schedule():
         proc = await asyncio.subprocess.create_subprocess_exec(
-            file._handle, 
+            file, 
             *args,
-            cwd   =cwd._handle,
+            cwd   =cwd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
         assert isinstance(proc.stdout, asyncio.StreamReader)
         assert isinstance(proc.stderr, asyncio.StreamReader)
-        async def read_stream(stream: asyncio.StreamReader, tee: typing.TextIO | None) -> str:
+        async def read(stream: asyncio.StreamReader, tee: typing.TextIO | None) -> str:
             text = ''
             while True:
                 line = await stream.readline()
                 if not stream.at_eof():
                     line = line.decode()
                     text += line
+                    print(line, end='', file=tee) if tee is not None else None
                 else:
                     break
-                if tee is not None:
-                    print(line, end='', file=tee)
             return text
         stdout, stderr = await when_all([
-            read_stream(stream=proc.stdout, tee=sys.stdout if print_stdout else None),
-            read_stream(stream=proc.stderr, tee=sys.stderr if print_stderr else None)
+            read(stream=proc.stdout, tee=sys.stdout if print_stdout else None),
+            read(stream=proc.stderr, tee=sys.stderr if print_stderr else None)
         ])
         code = await proc.wait()
         if code == 0:
-            return (stdout, stderr) if return_stdout and return_stderr else \
-                    stdout          if return_stdout                   else \
-                            stderr  if                   return_stderr else \
-                    None
+            if return_stdout:
+                return stdout
+            elif return_stderr:
+                return stderr
+            else:
+                return None
         else:
             raise SubprocessError(stderr=stderr, is_stderr_printed=print_stderr, code=code)

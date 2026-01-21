@@ -3,7 +3,7 @@ from cppmakelib.compiler.gcc      import Gcc
 from cppmakelib.error.config      import ConfigError
 from cppmakelib.error.subprocess  import SubprocessError
 from cppmakelib.execution.run     import async_run
-from cppmakelib.file.file_system  import Path, UnresolvedPath, create_dir, exist_file, resolve_path
+from cppmakelib.file.file_system  import Path, UnresolvedPath, create_dir, exist_file
 from cppmakelib.utility.decorator import member, syncable, unique
 from cppmakelib.utility.version   import Version
 
@@ -14,8 +14,17 @@ class Clang(Gcc):
     async def async_precompile(self, module_file: Path, interface_file: Path, object_file: Path, compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[Path] = [], import_dirs: list[Path] = [], diagnostic_file: Path | None = None) -> None: ...
     def             compile   (self, source_file: Path,                       object_file: Path, compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[Path] = [], import_dirs: list[Path] = [], diagnostic_file: Path | None = None) -> None: ...
     async def async_compile   (self, source_file: Path,                       object_file: Path, compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[Path] = [], import_dirs: list[Path] = [], diagnostic_file: Path | None = None) -> None: ...
-    name            : str = 'clang'
-    interface_suffix: str = '.pcm'
+    name              : str = 'clang'
+    precompiled_suffix: str = '.pcm'
+    file              : Path
+    version           : Version
+    stdlib_name       : str
+    stdlib_module_file: Path
+    stdlib_static_file: Path
+    stdlib_shared_file: Path
+    compile_flags     : list[str]
+    link_flags        : list[str]
+    define_macros     : dict[str, str]
 
     async def _async_get_version           (self) -> Version: ...
     async def _async_get_stdlib_name       (self) -> str: ...
@@ -30,7 +39,7 @@ async def __ainit__(
     self: Clang, 
     file: Path | UnresolvedPath = UnresolvedPath('clang++')
 ) -> None:
-    self.file               = file if isinstance(file, Path) else resolve_path(file)
+    self.file               = file if isinstance(file, Path) else file.resolved_path()
     self.version            = await self._async_get_version()
     self.stdlib_name        = await self._async_get_stdlib_name()
     self.stdlib_module_file = await self._async_get_stdlib_module_file()
@@ -121,12 +130,12 @@ async def _async_get_version(self: Clang):
             return_stdout=True
         )
     except SubprocessError as error:
-        raise ConfigError(f'clang is not valid (with file = {self.file})') from error
+        raise ConfigError(f'clang check failed (with file = {self.file})') from error
     if not stdout.startswith('clang') and 'clang version' not in stdout:
-        raise ConfigError(f'clang is not valid (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "clang++ ..." or "... clang version ...")')
+        raise ConfigError(f'clang check failed (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "clang++ ..." or "... clang version ...")')
     version = Version.parse(stdout)
     if version < 21:
-        raise ConfigError(f'clang is too old (with file = {self.file}, version = {version}, requires = 21+)')
+        raise ConfigError(f'clang version is too old (with file = {self.file}, version = {version}, requires = 21+)')
     return version
 
 async def _async_get_stdlib_name(self: Clang):
