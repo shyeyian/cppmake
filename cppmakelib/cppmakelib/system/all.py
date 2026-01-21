@@ -3,16 +3,23 @@ from cppmakelib.system.linux   import Linux
 from cppmakelib.system.macos   import Macos
 from cppmakelib.system.windows import Windows
 
-system = ...
+system: Linux | Macos | Windows
 
 
 
-suberrors = []
-for System in (Linux, Macos, Windows):
-    try:
-        system = System()
-        break
-    except ConfigError as error:
-        suberrors += [error]
-else:
-    raise ConfigError(f'system is not supported, because\n{'\n'.join([f' {error}' for error in suberrors])}')
+def _choose_system() -> Linux | Macos | Windows:
+    matches: list[Linux | Macos | Windows] = []
+    errors : list[Exception]               = []
+    for System in (Linux, Macos, Windows):
+        try:
+            matches += [System()]
+        except ConfigError as error:
+            errors += [error]
+    if len(matches) == 0:
+        raise ConfigError(f'system is not supported (with matches = {matches})') from ExceptionGroup('no compiler is matched', errors)
+    elif len(matches) == 1:
+        return matches[0]
+    else:
+        raise ConfigError(f'system is ambiguous (with matches = {matches})')
+
+system = _choose_system()
