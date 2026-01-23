@@ -1,17 +1,16 @@
-from cppmakelib.error.config      import ConfigError
-from cppmakelib.file.file_system  import UnresolvedPath
-from cppmakelib.utility.decorator import member
+from cppmakelib.error.config       import ConfigError
+from cppmakelib.utility.decorator  import member
+from cppmakelib.utility.filesystem import path
+
 import sys
 
 class Windows:
     def __init__(self) -> None: ...
-    name             : str            = 'windows'
-    executable_suffix: str            = '.exe'
-    object_suffix    : str            = '.obj'
-    static_suffix    : str            = '.lib'
-    shared_suffix    : str            = '.dll'
-    compiler         : UnresolvedPath = UnresolvedPath('cl.exe')
-    linker           : UnresolvedPath = UnresolvedPath('link.exe')
+    executable_suffix: str  = '.exe'
+    object_suffix    : str  = '.obj'
+    static_suffix    : str  = '.lib'
+    dynamic_suffix   : str  = '.dll'
+    compiler         : path = 'cl.exe'
 
     def _check(self) -> None: ...
 

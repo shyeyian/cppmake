@@ -1,7 +1,7 @@
 from cppmakelib.basic.config      import config
 from cppmakelib.compiler.all      import compiler
-from cppmakelib.execution.run     import async_run
-from cppmakelib.file.file_system  import absolute_path, create_dir, remove_dir
+from cppmakelib.executor.run      import async_run
+from cppmakelib.utility.filesystemimport absolute_path, create_dir, remove_dir
 from cppmakelib.utility.decorator import syncable, unique
 from cppmakelib.utility.version   import Version
 

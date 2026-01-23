@@ -20,7 +20,7 @@ subprocess.run(['git', 'pull'])
 # Update subprojects
 for project in ['cppmakelib', 'cppmake', 'cppmaked']:
     # Advance version
-    with open(pathlib.Path()/project/'pyproject.toml', 'r') as reader:
+    with open(pathlib.path()/project/'pyproject.toml', 'r') as reader:
         pyproject = reader.read()
     pyproject = re.sub(
         pattern=r'^version = "(\d+)\.(\d+)\.(\d+)"$', 
@@ -28,7 +28,7 @@ for project in ['cppmakelib', 'cppmake', 'cppmaked']:
         string =pyproject, 
         flags  =re.MULTILINE
     )
-    with open(pathlib.Path()/project/'pyproject.toml', 'w') as writer:
+    with open(pathlib.path()/project/'pyproject.toml', 'w') as writer:
         writer.write(pyproject)
 
     # Twine upload
@@ -49,8 +49,8 @@ for project in ['cppmakelib', 'cppmake', 'cppmaked']:
             check=True
         )
     finally:
-        shutil.rmtree(pathlib.Path()/project/'dist')
-        shutil.rmtree(pathlib.Path()/project/f'{project}.egg-info')
+        shutil.rmtree(pathlib.path()/project/'dist')
+        shutil.rmtree(pathlib.path()/project/f'{project}.egg-info')
 
 # Git push
 subprocess.run(['git', 'add', '.'])

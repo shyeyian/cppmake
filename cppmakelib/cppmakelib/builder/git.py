@@ -1,4 +1,4 @@
-from cppmakelib.execution.run     import async_run
+from cppmakelib.executor.run      import async_run
 from cppmakelib.utility.decorator import syncable, unique
 from cppmakelib.utility.version   import Version
 

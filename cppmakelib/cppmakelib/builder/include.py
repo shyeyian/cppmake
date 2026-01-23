@@ -1,4 +1,4 @@
-from cppmakelib.file.file_system  import create_dir, remove_dir, copy_file, copy_dir
+from cppmakelib.utility.filesystemimport create_dir, remove_dir, copy_file, copy_dir
 
 def include(package, file=None, dir=None, relpath='.'):
     try:

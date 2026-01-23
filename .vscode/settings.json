@@ -4,6 +4,7 @@
         "reportNoOverloadImplementation": "none",
         "reportPrivateUsage": "none",
         "reportRedeclaration": "none",
+        "reportSelfClsParameterName": "none",
         "reportUnusedFunction": "none",
         "reportUnusedImport": "warning",
         "reportUnusedVariable": "warning"

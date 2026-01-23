@@ -1,22 +1,21 @@
-from cppmakelib.basic.config      import config
-from cppmakelib.compiler.clang    import Clang
-from cppmakelib.error.config      import ConfigError
-from cppmakelib.error.subprocess  import SubprocessError
-from cppmakelib.execution.run     import async_run
-from cppmakelib.file.file_system  import Path, UnresolvedPath
-from cppmakelib.utility.decorator import member, syncable, unique
-from cppmakelib.utility.version   import Version
+from cppmakelib.basic.config       import config
+from cppmakelib.compiler.clang     import Clang
+from cppmakelib.error.config       import ConfigError
+from cppmakelib.error.subprocess   import SubprocessError
+from cppmakelib.executor.run       import async_run
+from cppmakelib.utility.decorator  import member, syncable, unique
+from cppmakelib.utility.filesystem import path
+from cppmakelib.utility.version    import Version
 
 class Emcc(Clang):
-    def        __init__(self, file: Path | UnresolvedPath = UnresolvedPath('em++')) -> None: ...
-    async def __ainit__(self, file: Path | UnresolvedPath = UnresolvedPath('em++')) -> None: ...
-    name              : str = 'emcc'
-    file              : Path
+    def        __init__(self, file: path = 'em++') -> None: ...
+    async def __ainit__(self, file: path = 'em++') -> None: ...
+    file              : path
     version           : Version
     stdlib_name       : str = 'libc++'
-    stdlib_module_file: Path
-    stdlib_static_file: Path
-    stdlib_shared_file: Path
+    stdlib_module_file: path
+    stdlib_static_file: path
+    stdlib_shared_file: path
     compile_flags     : list[str]
     link_flags        : list[str]
     define_macros     : dict[str, str]
@@ -29,9 +28,9 @@ class Emcc(Clang):
 @unique
 async def __ainit__(
     self: Emcc, 
-    file: Path | UnresolvedPath = UnresolvedPath('em++')
+    file: path = 'em++'
 ) -> None:
-    self.file               = file if isinstance(file, Path) else file.resolved_path()
+    self.file               = file
     self.version            = await self._async_get_version()
     self.stdlib_name        = 'libc++'
     self.stdlib_module_file = await self._async_get_stdlib_module_file()
@@ -69,7 +68,7 @@ async def _async_get_version(self: Emcc) -> Version:
     return version
 
 @member(Emcc)
-async def _async_get_stdlib_module_file(self: Emcc) -> Path:
+async def _async_get_stdlib_module_file(self: Emcc) -> path:
     clang_stdlib_name = await Clang._async_get_stdlib_name(self)
     if clang_stdlib_name == 'libc++':
         try:
