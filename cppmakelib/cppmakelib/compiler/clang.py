@@ -8,12 +8,15 @@ from cppmakelib.utility.filesystem import create_dir, exist_file, parent_dir, pa
 from cppmakelib.utility.version    import Version
 
 class Clang(Gcc):
-    def           __init__    (self, file: path = 'clang++')                                                                                                                                                                           -> None: ...
-    async def    __ainit__    (self, file: path = 'clang++')                                                                                                                                                                           -> None: ...
+    def           __init__    (self, file: path = 'clang++')                                                                                                                                                                                                            -> None: ...
+    async def    __ainit__    (self, file: path = 'clang++')                                                                                                                                                                                                            -> None: ...
     def             precompile(self, module_file: path, precompiled_file: path, object_file: path, compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [], import_dirs: list[path] = [], diagnostic_file: path | None = None) -> None: ...
     async def async_precompile(self, module_file: path, precompiled_file: path, object_file: path, compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [], import_dirs: list[path] = [], diagnostic_file: path | None = None) -> None: ...
+    def             preparse  (self, header_file: path, preparsed_file  : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [],                               diagnostic_file: path | None = None) -> None: ...
+    async def async_preparse  (self, header_file: path, preparsed_file  : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [],                               diagnostic_file: path | None = None) -> None: ...
     def             compile   (self, source_file: path, object_file     : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [], import_dirs: list[path] = [], diagnostic_file: path | None = None) -> None: ...
     async def async_compile   (self, source_file: path, object_file     : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [], import_dirs: list[path] = [], diagnostic_file: path | None = None) -> None: ...
+    preparsed_suffix  : str = '.pch'
     precompiled_suffix: str = '.pcm'
     file              : path
     version           : Version
@@ -92,6 +95,29 @@ async def async_precompile(
             *[f'-fprebuilt-module-path={import_dir}' for import_dir in import_dirs],
             '-c', module_file,
             '-o', object_file
+        ]
+    )
+
+@member(Gcc)
+@syncable
+async def async_preparse(
+    self           : Gcc,
+    header_file    : path,
+    preparsed_file : path,
+    compile_flags  : list[str]      = [],
+    define_macros  : dict[str, str] = {},
+    include_dirs   : list[path]     = [],
+    diagnostic_file: path | None    = None
+) -> None:
+    create_dir(parent_dir(preparsed_file))
+    await async_run(
+        file=self.file,
+        args=[
+            *(self.compile_flags + compile_flags),
+            *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
+            *[f'-I{include_dir}' for include_dir in include_dirs],
+            '-c', '-x', 'c++-header', header_file,
+            '-o', preparsed_file
         ]
     )
 
