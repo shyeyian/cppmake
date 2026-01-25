@@ -1,10 +1,11 @@
 from cppmakelib.basic.config          import config
+from cppmakelib.basic.context         import context
 from cppmakelib.error.config          import ConfigError
 from cppmakelib.executor.operation    import when_all
 from cppmakelib.executor.scheduler    import scheduler
-from cppmakelib.logger.unit_status    import unit_status_logger
-from cppmakelib.utility.decorator     import member, once, syncable, trace, unique
-from cppmakelib.utility.filesystem    import path, exist_dir, exist_file
+from cppmakelib.logger.unit_status    import UnitStatusLogger
+from cppmakelib.utility.decorator     import member, once, relocatable, syncable, trace, unique
+from cppmakelib.utility.filesystem    import path, exist_dir
 from cppmakelib.utility.module        import import_module
 import types
 import typing
@@ -16,75 +17,75 @@ class Package:
     async def async_build   (self)            -> None   : ...
     def             is_built(self)            -> bool   : ...
     async def async_is_built(self)            -> bool   : ...
-    name           : str
-    dir            : path
-    header_dir     : path
-    module_dir     : path
-    source_dir     : path
-    cppmake_file   : path
-    build_dir      : path
-    install_dir    : path
-    include_dir    : path
-    import_dir     : path
-    lib_dir        : path
-    depend_packages: list[Package]
-    compile_flags  : list[str]
-    link_flags     : list[str]
-    define_macros  : dict[str, str]
-    cppmake        : types.ModuleType | None
-
-    @staticmethod
-    def _get_name(dir: path) -> str: ...
-    @staticmethod
-    def _which_contains(file: path) -> Package: ...
-    
+    # ========
+    name               : str
+    dir                : path
+    # ========
+    search_header_dir  : path # redefinable in cppmake.py
+    search_module_dir  : path # redefinable in cppmake.py
+    # ========
+    build_dir          : path
+    build_cache_dir    : path
+    build_code_dir     : path
+    build_header_dir   : path
+    build_module_dir   : path
+    build_source_dir   : path
+    # ========
+    install_dir        : path
+    install_bin_dir    : path
+    install_import_dir : path
+    install_include_dir: path
+    install_lib_dir    : path
+    # ========
+    compile_flags      : list[str]      # redefinable in cppmake.py
+    link_flags         : list[str]      # redefinable in cppmake.py
+    define_macros      : dict[str, str] # redefinable in cppmake.py
+    # ========
+    require_packages   : list[Package]
+    # ========
+    unit_status_logger : UnitStatusLogger
+    # ========
+    cppmake_file       : path
+    cppmake            : types.ModuleType
+    # ========
     
 
 @member(Package)
+@relocatable
 @unique
 @trace
 def __init__(self: Package, dir: path) -> None:
-    self.name             = Package._get_name(dir)
-    self.dir              = dir
-    self.header_dir       = self.dir/'header'
-    self.module_dir       = self.dir/'module'
-    self.source_dir       = self.dir/'source'
-    self.cppmake_file     = self.dir/'cppmake.py'
-    self.build_dir        = path()/'binary'/config.type/'package'/self.name/'build'
-    self.install_dir      = path()/'binary'/config.type/'package'/self.name/'install'
-    self.include_dir      = path()/'binary'/config.type/'package'/self.name/'install'/'include'
-    self.import_dir       = path()/'binary'/config.type/'package'/self.name/'install'/'import'
-    self.lib_dir          = path()/'binary'/config.type/'package'/self.name/'install'/'lib'
-    self.depend_packages  = [] # defined in cppmake.py
-    self.compile_flags    = [] # defined in cppmake.py
-    self.link_flags       = [] # defined in cppmake.py
-    self.define_macros    = {} # defined in cppmake.py
-    with context.switch(build_dir=self.build_dir, )
-    self.cppmake          = import_module(self.cppmake_file, globals={'self': self}) if exist_file(self.cppmake_file) else None
+    self.dir                 = dir
+    self.search_header_dir   = f'{self.dir}/header'
+    self.search_module_dir   = f'{self.dir}/module'
+    self.build_dir           = f'binary/{config.type}/{self.name}/build'
+    self.build_cache_dir     = f'{self.build_dir}/cache'
+    self.build_code_dir      = f'{self.build_dir}/code'
+    self.build_header_dir    = f'{self.build_dir}/header'
+    self.build_module_dir    = f'{self.build_dir}/module'
+    self.build_source_dir    = f'{self.build_dir}/source'
+    self.install_dir         = f'binary/{config.type}/{self.name}/install'
+    self.install_bin_dir     = f'{self.install_dir}/bin'
+    self.install_import_dir  = f'{self.install_dir}/import'
+    self.install_include_dir = f'{self.install_dir}/include'
+    self.install_lib_dir     = f'{self.install_dir}/lib'
+    self.compile_flags       = []
+    self.link_flags          = []
+    self.define_macros       = {}
+    self.require_packages    = []
+    self.unit_status_logger  = UnitStatusLogger(build_cache_dir=self.build_cache_dir)
+    self.cppmake_file        = f'{self.dir}/cppmake.py'
+    with context.switch(package=self):
+        self.cppmake = import_module(file=self.cppmake_file, globals={'self': self})
+
 
 @member(Package)
 @syncable
 @once
 @trace
 async def async_build(self: Package) -> None:
-    if not await self.async_is_built():
-        await when_all([package.async_build() for package in self.depend_packages])
-        async with scheduler.schedule(scheduler.max):
-            self.cppmake.build() if self.cppmake is not None and hasattr(self.cppmake, 'build') else None
-        unit_status_logger.set_package_built(package=self, result=True)
-
-@member(Package)
-@syncable
-@once
-async def async_is_built(self: Package) -> bool:
-    return all(await when_all([package.async_is_built() for package in self.depend_packages])) and \
-           unit_status_logger.get_package_built(package=self)
-
-@member(Package)
-def _search(name: str) -> path:
-    if name == 'main':
-        return path()
-    elif exist_dir(path()/'package'/'name'):
-        return path()/'package'/'name'
-    else:
-        raise ConfigError(f'package {name} is not found')
+    await when_all([package.async_build() for package in self.require_packages])
+    async with scheduler.schedule(scheduler.max):
+        with context.switch(package=self):
+            # lazy-print(f'build package {self.name}')
+            self.cppmake.build() if hasattr(self.cppmake, 'build') else None

@@ -1,3 +1,4 @@
+from cppmakelib.basic.context      import context
 from cppmakelib.unit.package       import Package
 from cppmakelib.utility.decorator  import member, unique
 from cppmakelib.utility.filesystem import path
@@ -11,15 +12,15 @@ class Binary:
     async def async_sign   (self)                    -> Binary: ...
     def             strip  (self)                    -> Binary: ...
     async def async_strip  (self)                    -> Binary: ...
-    file          : path
-    belong_package: Package
-    link_flags    : list[str]
+    file           : path
+    context_package: Package
+    link_flags     : list[str]
 
 
 
 @member(Binary)
 @unique
 def __init__(self: Binary, file: path) -> None:
-    self.file           = file
-    self.belong_package = Package._which_contains(self.file)
-    self.link_flags     = self.belong_package.link_flags
+    self.file            = file
+    self.context_package = context.package
+    self.link_flags      = self.context_package.link_flags

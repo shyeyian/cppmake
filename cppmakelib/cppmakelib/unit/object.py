@@ -1,6 +1,4 @@
 from cppmakelib.compiler.all       import compiler
-from cppmakelib.logger.unit_status import unit_status_logger
-from cppmakelib.system.all         import system
 from cppmakelib.unit.binary        import Binary
 from cppmakelib.unit.dynamic       import Dynamic
 from cppmakelib.unit.executable    import Executable
@@ -29,10 +27,7 @@ class Object(Binary):
 @unique
 def __init__(self: Object, file: path) -> None:
     super(Object, self).__init__(file)
-    self.static_file     = self.file.remove_extension().add_extension(system.static_suffix)
-    self.dynamic_file    = self.file.remove_extension().add_extension(system.dynamic_suffix)
-    self.executable_file = self.file.remove_extension().add_extension(system.executable_suffix)
-    self.require_objects = [Object(file) for file in unit_status_logger.get_object_requires(object=self)]
+    self.require_objects = [Object(file) for file in self.context_package.unit_status_logger.get_object_requires(object=self)]
 
 @member(Binary)
 @syncable
