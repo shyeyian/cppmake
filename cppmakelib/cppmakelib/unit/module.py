@@ -3,7 +3,6 @@ from cppmakelib.executor.operation import when_all
 from cppmakelib.executor.scheduler import scheduler
 from cppmakelib.system.all         import system
 from cppmakelib.unit.code          import Code
-from cppmakelib.unit.header        import Header
 from cppmakelib.unit.precompiled   import Precompiled
 from cppmakelib.utility.algorithm  import recursive_collect
 from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
@@ -21,7 +20,6 @@ class Module(Code):
     precompiled_file: path
     object_file     : path
     diagnostic_file : path
-    include_headers : list[Header]
     import_modules  : list[Module]
 
     if typing.TYPE_CHECKING:
@@ -38,19 +36,17 @@ class Module(Code):
 @unique
 async def __ainit__(self: Module, file: path) -> None:
     await super(Module, self).__ainit__(file)
-    self.name             = self.context_package.unit_status_logger.get_module_name(file=self.file)
+    self.name             = await self.context_package.unit_status_logger.async_get_module_name(module=self)
     self.precompiled_file = f'{self.context_package.build_module_dir}/{self.name.replace(':', '-')}{compiler.precompiled_suffix}'
     self.object_file      = f'{self.context_package.build_module_dir}/{self.name.replace(':', '-')}{system.object_suffix}'
     self.diagnostic_file  = f'{self.context_package.build_module_dir}/{self.name.replace(':', '.')}{compiler.diagnostic_suffix}'
-    self.include_headers  = await when_all([Header.__anew__(Header, file) for file in self.context_package.unit_status_logger.get_module_includes(module=self)])
-    self.import_modules   = await when_all([Module.__anew__(Module, file) for file in self.context_package.unit_status_logger.get_module_imports (module=self)])
+    self.import_modules   = await when_all([Module.__anew__(Module, file) for file in await self.context_package.unit_status_logger.async_get_module_imports(module=self)])
 
 @member(Module)
 @syncable
 @once
 async def async_precompile(self: Module) -> Precompiled:
     if not await self.async_is_precompiled():
-        await when_all([header.async_preparse  () for header in self.include_headers])
         await when_all([module.async_precompile() for module in self.import_modules ])
         await self.async_preprocess()
         async with scheduler.schedule():
@@ -64,15 +60,14 @@ async def async_precompile(self: Module) -> Precompiled:
                 import_dirs     =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir,  root=False),
                 diagnostic_file =self.diagnostic_file,
             )
-        self.context_package.unit_status_logger.set_module_precompiled(module=self, result=True)
+        self.context_package.unit_status_logger.set_module_precompiled(module=self, precompiled=True)
     return Precompiled(self.precompiled_file)
 
 @member(Module)
 @syncable
 @once
 async def async_is_precompiled(self: Module) -> bool:
-    return all(await when_all([header.async_is_preparsed  () for header in self.include_headers])) and \
-           all(await when_all([module.async_is_precompiled() for module in self.import_modules ])) and \
+    return all(await when_all([module.async_is_precompiled() for module in self.import_modules ])) and \
            await self.async_is_preprocessed()                                                      and \
            self.context_package.unit_status_logger.get_module_precompiled(module=self)
 

@@ -5,7 +5,8 @@ from cppmakelib.unit.package       import Package
 from cppmakelib.unit.preprocessed  import Preprocessed
 from cppmakelib.utility.algorithm  import recursive_collect
 from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
-from cppmakelib.utility.filesystem import path, relative_path
+from cppmakelib.utility.filesystem import modified_time_file, path, relative_path
+from cppmakelib.utility.time       import time
 import typing
 
 class Code:
@@ -16,10 +17,11 @@ class Code:
     def             is_preprocessed(self)             -> bool        : ...
     async def async_is_preprocessed(self)             -> bool        : ...
     file             : path
-    context_package  : Package
+    modified_time    : time
     preprocessed_file: path
     compile_flags    : list[str]
     define_macros    : dict[str, str]
+    context_package  : Package
 
     if typing.TYPE_CHECKING:
         @staticmethod
@@ -35,6 +37,7 @@ class Code:
 @unique
 async def __ainit__(self: Code, file: path) -> None:
     self.file              = file
+    self.modified_time     = modified_time_file(self.file)
     self.context_package   = context.package
     self.preprocessed_file = f'{self.context_package.build_code_dir}/{relative_path(from_path=self.context_package.dir, to_path=self.file)}'
     self.compile_flags     = self.context_package.compile_flags
@@ -53,7 +56,7 @@ async def async_preprocess(self: Code) -> Preprocessed:
                 define_macros    =self.define_macros,
                 include_dirs     =[self.context_package.search_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir)
             )
-        self.context_package.unit_status_logger.set_code_preprocessed(code=self, result=True)
+        self.context_package.unit_status_logger.set_code_preprocessed(code=self, preprocessed=True)
     return Preprocessed(self.preprocessed_file)
 
 @member(Code)
