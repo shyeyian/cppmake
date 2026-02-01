@@ -1,7 +1,6 @@
 from cppmakelib.basic.config      import config
 from cppmakelib.utility.decorator import member
 import asyncio
-import types
 import typing
 
 class Scheduler:
@@ -9,10 +8,10 @@ class Scheduler:
     def schedule(self, value: int = 1)               -> typing.AsyncContextManager[None]: ...
     max: int
 
-    class _Context:
-        def       __init__  (self, scheduler: Scheduler, value: int)                                                                             -> None: ...
-        async def __aenter__(self)                                                                                                               -> None: ...
-        async def __aexit__ (self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: types.TracebackType | None) -> None: ...
+    class _ContextManager:
+        def       __init__  (self, scheduler: Scheduler, value: int)        -> None: ...
+        async def __aenter__(self)                                          -> None: ...
+        async def __aexit__ (self, *args: typing.Any, **kwargs: typing.Any) -> None: ...
         _scheduler: Scheduler
         _value    : int
     class _NotifyFailedError(RuntimeError):
@@ -36,19 +35,19 @@ def __init__(self: Scheduler, value: int = config.parallel) -> None:
 
 @member(Scheduler)
 def schedule(self: Scheduler, value: int = 1) -> typing.AsyncContextManager[None]:
-    return Scheduler._Context(self, value)
+    return Scheduler._ContextManager(self, value)
 
-@member(Scheduler._Context)
-def __init__(self: Scheduler._Context, scheduler: Scheduler, value: int):
+@member(Scheduler._ContextManager)
+def __init__(self: Scheduler._ContextManager, scheduler: Scheduler, value: int):
     self._scheduler = scheduler
     self._value    = value
 
-@member(Scheduler._Context)
-async def __aenter__(self: Scheduler._Context) -> None:
+@member(Scheduler._ContextManager)
+async def __aenter__(self: Scheduler._ContextManager) -> None:
     return await self._scheduler._acquire(self._value)
 
-@member(Scheduler._Context)
-async def __aexit__(self: Scheduler._Context, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: types.TracebackType | None) -> None:
+@member(Scheduler._ContextManager)
+async def __aexit__(self: Scheduler._ContextManager, *args: typing.Any, **kwargs: typing.Any) -> None:
     self._scheduler._release(self._value)
 
 @member(Scheduler)

@@ -1,7 +1,8 @@
-1. Why we do not use preparsed headers?
-    - Preparsed headers in
-        - gcc: only one `.gcm` available in one unit.
-        - clang:  
+0. 每个package应该独立build。不管子package的header, 也不管子package的module。
+   include header和import module **只解析同package下的依赖关系**
+    ***module.belong_package一定是context.package***   
+
+ 
 
 
 1. `module.__init__()`依赖`package.build()`, 这样`compiler.preprocess_file()`就能正常工作了。

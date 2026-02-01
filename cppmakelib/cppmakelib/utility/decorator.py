@@ -1,21 +1,24 @@
-from cppmakelib.executor.operation  import sync_wait
+from cppmakelib.basic.context      import context
+from cppmakelib.executor.operation import sync_wait
+from cppmakelib.utility.filesystem import path, relative_path
 import asyncio
 import functools
 import inspect
 import threading
 import typing
 
-def member  [**Ts, R](cls: type)                                                -> typing.Callable[[typing.Callable[Ts, R]], None]   : ...
-def once    [**Ts, R](func: typing.Callable[Ts, typing.Awaitable[R]])           -> typing.Callable[Ts, typing.Awaitable[R]]          : ...
-def syncable[**Ts, R](func: typing.Callable[Ts, typing.Awaitable[R]])           -> typing.Callable[Ts, typing.Awaitable[R]]          : ...
-def trace   [**Ts, R](func: typing.Callable[Ts, R])                             -> typing.Callable[Ts, R]                            : ...
-def unique  [**Ts]   (func: typing.Callable[Ts, None | typing.Awaitable[None]]) -> typing.Callable[Ts, None | typing.Awaitable[None]]: ...
+def implement  [**Ts, R](func: typing.Callable[Ts, R])                                                            -> typing.Callable[Ts, R]                                                           : ...
+def member              (cls: type)                                                                               -> typing.Callable[[typing.Callable[..., typing.Any]], None]                        : ...
+def once       [S, R]   (func: typing.Callable[[S], typing.Coroutine[typing.Any, typing.Any, R]])                 -> typing.Callable[[S], typing.Coroutine[typing.Any, typing.Any, R]]                : ...
+def relocatable[S, R]   (func: typing.Callable[[S, path], R])                                                     -> typing.Callable[[S, path], R]                                                    : ...
+def syncable   [**Ts, R](func: typing.Callable[Ts, typing.Coroutine[typing.Any, typing.Any, R]])                  -> typing.Callable[Ts, typing.Coroutine[typing.Any, typing.Any, R]]                 : ...
+def unique     [S]      (func: typing.Callable[[S, path], None | typing.Coroutine[typing.Any, typing.Any, None]]) -> typing.Callable[[S, path], None | typing.Coroutine[typing.Any, typing.Any, None]]: ...
 
 if typing.TYPE_CHECKING:
     @typing.overload
-    def unique[**Ts](func: typing.Callable[Ts,                  None ]) -> typing.Callable[Ts,                  None ]: ...
+    def unique[S](func: typing.Callable[[S, path],                                          None ]) -> typing.Callable[[S, path],                                          None ]: ...
     @typing.overload
-    def unique[**Ts](func: typing.Callable[Ts, typing.Awaitable[None]]) -> typing.Callable[Ts, typing.Awaitable[None]]: ...
+    def unique[S](func: typing.Callable[[S, path], typing.Coroutine[typing.Any, typing.Any, None]]) -> typing.Callable[[S, path], typing.Coroutine[typing.Any, typing.Any, None]]: ...
 
 # Every project has its own kind of shit mountain,
 # and the main difference lies in where those mountains are placed.
@@ -28,168 +31,85 @@ if typing.TYPE_CHECKING:
 # Here, in this project, we've gathered and neatly buried
 # all our shit in the file below. :)
 
-# def member[**Ts, R](cls: type) -> typing.Callable[[typing.Callable[Ts, R]], None]:
-#     def attacher(func: typing.Callable[Ts, R]) -> None:
-#         setattr(cls, func.__name__, func)
-#     return attacher
+def implement[**Ts, R](func: typing.Callable[Ts, R]) -> typing.Callable[Ts, R]:
+    if inspect.isfunction(func):
+        return func
+    elif isinstance(func, _MultiFunc):
+        for subfunc in func.funcs:
+            setattr(inspect.getmodule(subfunc), subfunc.__name__, subfunc)
+        return typing.cast(_MultiFunc[Ts, R], func)
+    else:
+        assert False
 
-# # unique走装饰class的路线，_MultiFunc总是长度为2，改名_SyncableFunc
+def member(cls: type) -> typing.Callable[[typing.Callable[..., typing.Any]], None]:
+    def memberizer(func: typing.Callable[..., typing.Any]) -> None:
+        if inspect.isfunction(func):
+            setattr(cls, func.__name__, func)
+        elif isinstance(func, _MultiFunc):
+            for subfunc in func.funcs:
+                setattr(cls, subfunc.__name__, subfunc)
+        else:
+            assert False
+    return memberizer
 
-# def syncable[**Ts, R](func: typing.Callable[Ts, typing.Awaitable[R]]) -> _SyncableFuncs[Ts, R]:
-#     return _SyncableFuncs(func)
+def once[S, R](func: typing.Callable[[S], typing.Coroutine[typing.Any, typing.Any, R]]) -> typing.Callable[[S], typing.Coroutine[typing.Any, typing.Any, R]]:
+    async def once_func(self: S) -> R:
+        if not hasattr      (self, f'_once_{func.__name__}'):
+            setattr         (self, f'_once_{func.__name__}', asyncio.create_task(func(self)))
+        return await getattr(self, f'_once_{func.__name__}')
+    return once_func
 
-# def unique[**Ts](func: typing.Callable[Ts, typing.Awaitable[None]]) -> _UniqueFuncs[Ts]:
-#     return _UniqueFuncs(func)
+def relocatable[S, R](func: typing.Callable[[S, path], R]) -> typing.Callable[[S, path], R]:
+    assert func.__name__ == '__init__' or func.__name__ == '__ainit__'
+    def relocatable_func(self: S, path: path) -> R:
+        relocated_path = relative_path(from_path='.', to_path=f'{context.package.dir}/{path}')
+        return func(self, relocated_path)
+    return relocatable_func
 
-# class _SyncableFuncs[**Ts, R]:
-#     def __init__   (self, funcs: list[typing.Callable[Ts, R | typing.Awaitable[R]]]) -> None                                   : ...
-#     def __iter__   (self)                                      -> typing.Iterable[typing.Callable[Ts, R | typing.Awaitable[R]]]: ...
-#     def __getitem__(self, index: int)                          -> typing.Callable[Ts, R | typing.Awaitable[R]]                 : ...
-#     def __call__   (self, *args: Ts.args, **kwargs: Ts.kwargs) -> R | typing.Awaitable[R]                                      : ...
+def syncable[**Ts, R](func: typing.Callable[Ts, typing.Coroutine[typing.Any, typing.Any, R]]) -> typing.Callable[Ts, typing.Coroutine[typing.Any, typing.Any, R]]:
+    if inspect.isfunction(func):
+        def sync_func(*args: Ts.args, **kwargs: Ts.kwargs) -> R:
+            return sync_wait(func(*args, **kwargs))
+        return _MultiFunc(func, sync_func)
+    elif isinstance(func, _MultiFunc):
+        return _MultiFunc[Ts, typing.Coroutine[typing.Any, typing.Any, R]](*[syncable(subfunc) for subfunc in func.funcs])
+    else:
+        assert False
 
-#     _sync_func : typing.Callable[Ts, R]
-#     _async_func: typing.Callable[Ts, typing.Awai]
+def unique[S](func: typing.Callable[[S, path], None | typing.Coroutine[typing.Any, typing.Any, None]]) -> typing.Callable[[S, path], None | typing.Coroutine[typing.Any, typing.Any, None]]:
+    if inspect.isfunction(func) and not inspect.iscoroutinefunction(func):
+        assert func.__name__ == '__init__'
+        def __new__(cls: type, path: path):
+            if not hasattr        (cls, f'_unique'):
+                setattr           (cls, f'_unique', {})
+            if path not in getattr(cls, f'_unique').keys():
+                getattr           (cls, f'_unique')[path] = super(cls, cls).__new__(cls)
+            return getattr        (cls, f'_unique')[path]
+        return _MultiFunc(func, __new__)
+    elif inspect.iscoroutinefunction(func):
+        assert func.__name__ == '__ainit__'
+        async def __anew__(cls: type, path: path):
+            if not hasattr        (cls, f'_unique'):
+                setattr           (cls, f'_unique', {})
+            if path not in getattr(cls, f'_unique').keys():
+                getattr           (cls, f'_unique')[path] = super(cls, cls).__new__(cls)
+            await getattr         (cls, f'_unique')[path].__ainit__(path)
+            return getattr        (cls, f'_unique')[path]
+        return _MultiFunc(func, __anew__)
+    elif isinstance(func, _MultiFunc):
+        return _MultiFunc(*[unique(subfunc) for subfunc in func.funcs])
+    else:
+        assert False
 
-#     _funcs: list[typing.Callable[..., typing.Any]]
+class _MultiFunc[**Ts, R]:
+    def __init__ (self, first: typing.Callable[Ts, R], *other: ...) -> None: ...
+    def __call__ (self, *args: Ts.args, **kwargs: Ts.kwargs)        -> R   : ...
+    funcs: tuple[typing.Callable[Ts, R], ...]
 
-# class _UniqueFuncs[**Ts]:
-#     ...
+@member(_MultiFunc)
+def __init__[**Ts, R](self: _MultiFunc[Ts, R], first: typing.Callable[Ts, R], *other: ...) -> None:
+    self.funcs = (first, *other)
 
-
-
-
-#     assert func.__name__.startswith('async_') or func.__name__.startswith('__a') # Should have pre-declaraed the corresponding methods.
-#     def sync_func(*args: Ts.args, **kwargs: Ts.kwargs) -> R:
-#         value: R | None = None
-#         error: Exception | None = None
-#         def target():
-#             nonlocal value
-#             nonlocal error
-#             try:
-#                 value = sync_wait(func(*args, **kwargs))
-#             except Exception as exception:
-#                 error = exception
-#         thread = threading.Thread(target=target)
-#         thread.start()
-#         thread.join()
-#         if value is not None:
-#             return value
-#         elif error is not None:
-#             raise error
-#         else:
-#             assert False
-#     if func.__name__.startswith('async_'):
-#         sync_func.__name__ = func.__name__[6:]
-#     elif func.__name__.startswith('__a'):
-#         sync_func.__name__ = func.__name__[:2] + func.__name__[3:]
-#     else:
-#         assert False
-#     return _SyncableFunc(func, sync_func)
-
-# @member(_MultiFunc)
-# def __init__[**Ts, R](self: _MultiFunc[Ts, R], funcs: list[typing.Callable[Ts, R | typing.Awaitable[R]]]) -> None:
-#     self._funcs = funcs
-#     for subfunc in self._funcs[1:]:
-#         setattr(inspect.getmodule(subfunc), subfunc.__name__, subfunc)
-
-# @member(_MultiFunc)
-# def __iter__[**Ts, R](self: _MultiFunc[Ts, R]) -> typing.Iterable[typing.Callable[..., typing.Any]]:
-#     return iter(self._funcs)
-
-# @member(_MultiFunc)
-# def __getitem__[**Ts, R](self: _MultiFunc[Ts, R], index: int):
-#     return self._funcs[index]
-
-# @member(_MultiFunc)
-# def __call__[**Ts, R](self: _MultiFunc[Ts, R], *args: Ts.args, **kwargs: Ts.kwargs) -> R | typing.Awaitable[R]:
-#     return self._funcs[0](*args, **kwargs)
-
-
-# def once(func):
-#     assert inspect.iscoroutinefunction(func)
-#     @functools.wraps(func)
-#     async def once_func(self, *args): # No kwargs
-#         if not         hasattr(self, f'_once_{func.__name__}'):
-#                        setattr(self, f'_once_{func.__name__}', {})
-#         if args not in getattr(self, f'_once_{func.__name__}').keys():
-#                        getattr(self, f'_once_{func.__name__}')[args] = asyncio.create_task(func(self, *args))
-#         return await   getattr(self, f'_once_{func.__name__}')[args]
-#     return once_func
-
-# def syncable(func):
-#     # Do not syncable a method when existing a same-named global function.
-#     # For example, when we have 'run(command=...)', do not define 'class Executable: @syncable async_run(self)', use 'async_execute' instead.
-#     if type(func) != _MultiFunc:
-#         assert inspect.iscoroutinefunction(func)
-#         assert func.__name__.startswith('async_') or func.__name__.startswith('__a') # Should have pre-declaraed the corresponding methods.
-#         @functools.wraps(func)
-#         def sync_func(*args, **kwargs):
-#             value = None
-#             error = None
-#             def target():
-#                 nonlocal value
-#                 nonlocal error
-#                 try:
-#                     value = sync_wait(func(*args, **kwargs))
-#                 except Exception as suberror:
-#                     error = suberror
-#                 except KeyboardInterrupt as suberror:
-#                     error = suberror
-#                 except:
-#                      raise
-#             thread = threading.Thread(target=target)
-#             thread.start()
-#             thread.join()
-#             if error is None:
-#                 return value
-#             else:
-#                 raise error
-#         sync_func.__name__ = func.__name__.removeprefix('async_') if func.__name__.startswith('async_') else \
-#                              func.__name__.replace('__a', '__')   if func.__name__.startswith('__a')    else \
-#                              assert_(False)
-#         return _MultiFunc([func, sync_func])
-#     else:
-#         results = [func_or_sync_func for subfunc in func for func_or_sync_func in syncable(subfunc)]
-#         return _MultiFunc(results)
-
-# def trace(func):
-#     assert inspect.isfunction(func)
-#     if not inspect.iscoroutinefunction(func):
-#         @functools.wraps(func)
-#         def trace_func(self, *args, **kwargs):
-#             try:
-#                 return func(self, *args, **kwargs)
-#             except Exception as error:
-#                 if hasattr(error, 'add_prefix'):
-#                      raise error.add_prefix(f'In {type(self).__qualname__.lower()} {self.name}:')
-#                 else:
-#                      raise error
-#         return trace_func
-#     else:
-#         @functools.wraps(func)
-#         async def trace_func(self, *args, **kwargs):
-#             try:
-#                 return await func(self, *args, **kwargs)
-#             except Exception as error:
-#                 if hasattr(error, 'add_prefix'):
-#                      raise error.add_prefix(f'In {type(self).__qualname__.lower()} {self.name}:')
-#                 else:
-#                      raise error
-#     return trace_func
-    
-# def unique(func):
-#     assert inspect.isfunction(func)
-#     assert func.__name__ == '__ainit__'
-#     @functools.wraps(func)
-#     async def unique_anew(cls, *args, **kwargs):
-#         if not hasattr(cls, '_pool'):
-#                setattr(cls, '_pool', {})
-#         if args in cls._pool.keys():
-#             self = cls._pool[args]
-#         else:
-#             self = super(cls, cls).__new__(cls)
-#             cls._pool[args] = self
-#         await func(self, *args, **kwargs)
-#         return self
-#     unique_anew.__name__ = '__anew__'
-#     return _MultiFunc([func, once(unique_anew)])
+@member(_MultiFunc)
+def __call__[**Ts, R](self: _MultiFunc[Ts, R], *args: Ts.args, **kwargs: Ts.kwargs) -> R:
+    return self.funcs[0](*args, **kwargs)

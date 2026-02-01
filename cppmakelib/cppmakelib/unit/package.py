@@ -1,12 +1,11 @@
 from cppmakelib.basic.config          import config
 from cppmakelib.basic.context         import context
-from cppmakelib.error.config          import ConfigError
 from cppmakelib.executor.operation    import when_all
 from cppmakelib.executor.scheduler    import scheduler
 from cppmakelib.logger.unit_status    import UnitStatusLogger
-from cppmakelib.utility.decorator     import member, once, relocatable, syncable, trace, unique
-from cppmakelib.utility.filesystem    import path, exist_dir
-from cppmakelib.utility.module        import import_module
+from cppmakelib.utility.decorator     import member, once, syncable, unique
+from cppmakelib.utility.filesystem    import path
+from cppmakelib.utility.import_       import import_module
 import types
 import typing
 
@@ -51,24 +50,22 @@ class Package:
     
 
 @member(Package)
-@relocatable
 @unique
-@trace
 def __init__(self: Package, dir: path) -> None:
     self.dir                 = dir
     self.search_header_dir   = f'{self.dir}/header'
     self.search_module_dir   = f'{self.dir}/module'
     self.build_dir           = f'binary/{config.type}/{self.name}/build'
-    self.build_cache_dir     = f'{self.build_dir}/cache'
-    self.build_code_dir      = f'{self.build_dir}/code'
-    self.build_header_dir    = f'{self.build_dir}/header'
-    self.build_module_dir    = f'{self.build_dir}/module'
-    self.build_source_dir    = f'{self.build_dir}/source'
+    self.build_cache_dir     = f'binary/{config.type}/{self.name}/build/cache'
+    self.build_code_dir      = f'binary/{config.type}/{self.name}/build/code'
+    self.build_header_dir    = f'binary/{config.type}/{self.name}/build/header'
+    self.build_module_dir    = f'binary/{config.type}/{self.name}/build/module'
+    self.build_source_dir    = f'binary/{config.type}/{self.name}/build/source'
     self.install_dir         = f'binary/{config.type}/{self.name}/install'
-    self.install_bin_dir     = f'{self.install_dir}/bin'
-    self.install_import_dir  = f'{self.install_dir}/import'
-    self.install_include_dir = f'{self.install_dir}/include'
-    self.install_lib_dir     = f'{self.install_dir}/lib'
+    self.install_bin_dir     = f'binary/{config.type}/{self.name}/install/bin'
+    self.install_import_dir  = f'binary/{config.type}/{self.name}/install/import'
+    self.install_include_dir = f'binary/{config.type}/{self.name}/install/include'
+    self.install_lib_dir     = f'binary/{config.type}/{self.name}/install/lib'
     self.compile_flags       = []
     self.link_flags          = []
     self.define_macros       = {}
@@ -82,7 +79,6 @@ def __init__(self: Package, dir: path) -> None:
 @member(Package)
 @syncable
 @once
-@trace
 async def async_build(self: Package) -> None:
     await when_all([package.async_build() for package in self.require_packages])
     async with scheduler.schedule(scheduler.max):

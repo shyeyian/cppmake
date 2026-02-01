@@ -1,14 +1,13 @@
 from cppmakelib.compiler.all       import compiler
 from cppmakelib.error.logic        import LogicError
+from cppmakelib.unit.code          import Code
+from cppmakelib.unit.module        import Module
+from cppmakelib.unit.source        import Source
 from cppmakelib.utility.filesystem import path
 from cppmakelib.utility.decorator  import member
 import json
 import re
 import typing
-if typing.TYPE_CHECKING:
-    from cppmakelib.unit.code    import Code
-    from cppmakelib.unit.module  import Module
-    from cppmakelib.unit.source  import Source
 
 class UnitStatusLogger:
     # ========
@@ -185,8 +184,8 @@ def _reflect(self: UnitStatusLogger, object: object) -> dict[str, typing.Any]:
         if hasattr(value, '__dict__'):
             reflected[key] = '...'
         elif isinstance(value, list):
-            for index, subvalue in enumerate(value):   # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
-                value[index] = self._reflect(subvalue) # pyright: ignore[reportUnknownArgumentType]
+            for index, subvalue in enumerate(typing.cast(list[object], value)):
+                value[index] = self._reflect(subvalue)
         else:
             reflected.pop(key)
     return reflected

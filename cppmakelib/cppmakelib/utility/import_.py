@@ -10,7 +10,7 @@ def import_module(file: path, globals: dict[str, typing.Any] = {}) -> types.Modu
 
 def import_module(file: path, globals: dict[str, typing.Any] = {}) -> types.ModuleType:
     try:
-        spec = importlib.util.spec_from_file_location(name=file.__str__(), location=file)
+        spec = importlib.util.spec_from_file_location(name=file, location=file)
     except FileNotFoundError as error:
         raise ConfigError(f'cppmake.py is not found') from error
     if spec is None or spec.loader is None:
