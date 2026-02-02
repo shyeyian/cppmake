@@ -1,12 +1,12 @@
-from cppmakelib.unit.executable    import Executable
-from cppmakelib.unit.object        import Object
+from cppmakelib.unit.binary        import Binary
+from cppmakelib.utility.decorator  import member, unique
 from cppmakelib.utility.filesystem import path
 
-class Dynamic:
-    def           __new__ (self, file: path) -> Dynamic   : ...
-    def           __init__(self, file: path) -> None      : ...
-    def             link  (self)             -> Executable: ...
-    async def async_link  (self)             -> Executable: ...
-    file           : path
-    executable_file: path
-    require_objects: list[Object]
+class Dynamic(Binary):
+    def __new__  (cls,  file: path) -> Dynamic: ...
+    def __init__ (self, file: path) -> None   : ...
+
+@member(Dynamic)
+@unique
+def __init__(self: Dynamic, file: path) -> None:
+    super(Dynamic, self).__init__(file)

@@ -48,8 +48,8 @@ async def async_compile(self: Source) -> Object:
                 object_file    =self.object_file,
                 compile_flags  =self.compile_flags,
                 define_macros  =self.define_macros,
-                include_dirs   =[self.context_package.build_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir, root=False),
-                import_dirs    =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir,  root=False),                    
+                include_dirs   =[self.context_package.build_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir),
+                import_dirs    =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir),                    
                 diagnostic_file=self.diagnostic_file,
             )
         self.context_package.unit_status_logger.set_source_compiled(source=self, compiled=True)

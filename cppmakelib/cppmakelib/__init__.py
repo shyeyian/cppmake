@@ -1,7 +1,6 @@
 from .basic.config        import config
 
 from .builder.cmake       import cmake
-from .builder.git         import git
 from .builder.include     import include
 from .builder.makefile    import makefile
 
@@ -15,7 +14,7 @@ from .error.config        import ConfigError
 from .error.logic         import LogicError
 from .error.subprocess    import SubprocessError
 
-from .utility.filesystem    import path, Unresolvedpath, exist_file, exist_dir, create_file, create_dir, copy_file, copy_dir, remove_file, remove_dir, mtime_file, iterate_dir
+from .utility.filesystem    import path, exist_file, exist_dir, create_file, create_dir, copy_file, copy_dir, remove_file, remove_dir, modified_time_file, iterate_dir
 
 from .execution.operation import sync_wait, start_detached, when_all, when_any
 from .execution.run       import run

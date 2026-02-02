@@ -1,7 +1,9 @@
 from cppmakelib.compiler.all       import compiler
 from cppmakelib.error.logic        import LogicError
+from cppmakelib.executor.operation import when_all
 from cppmakelib.unit.code          import Code
 from cppmakelib.unit.module        import Module
+from cppmakelib.unit.object        import Object
 from cppmakelib.unit.source        import Source
 from cppmakelib.utility.filesystem import path
 from cppmakelib.utility.decorator  import member
@@ -20,23 +22,30 @@ class UnitStatusLogger:
     async def async_get_module_name       (self, module: Module)                            -> str       : ...
     def             set_module_name       (self, module: Module,  name        : str)        -> None      : ...
     async def async_get_module_imports    (self, module: Module)                            -> list[path]: ...
-    def             set_module_imports    (self, module: Module,  imports     : list[path]) -> None      : ...
+    async def async_set_module_imports    (self, module: Module,  imports     : list[path]) -> None      : ...
     def             get_module_precompiled(self, module: Module)                            -> bool      : ...
     def             set_module_precompiled(self, module: Module,  precompiled : bool)       -> None      : ...
     # ========
     async def async_get_source_imports    (self, source: Source)                            -> list[path]: ...
-    def             set_source_imports    (self, source: Source,  imports     : list[path]) -> None      : ...
+    async def async_set_source_imports    (self, source: Source,  imports     : list[path]) -> None      : ...
     def             get_source_compiled   (self, source: Source)                            -> bool      : ...
     def             set_source_compiled   (self, source: Source,  compiled    : bool)       -> None      : ...
     # ========
+    def             get_object_libs       (self, object: Object)                            -> list[path]: ...
+    def             set_object_libs       (self, object: Object,  libs        : list[path]) -> None      : ...
+    def             get_object_shared     (self, object: Object)                            -> bool      : ...
+    def             set_object_shared     (self, object: Object,  shared      : bool)       -> None      : ...
+    def             get_object_linked     (self, object: Object)                            -> bool      : ...
+    def             set_object_linked     (self, object: Object,  linked      : bool)       -> None      : ...
+    # ========
 
-    def _get(self, entry: list[str], check: dict[str, typing.Any], result: str)                   -> typing.Any | typing.Literal[False]: ...
-    def _set(self, entry: list[str], check: dict[str, typing.Any], result: dict[str, typing.Any]) -> None                              : ...
-    def _reflect(self, object: object) -> dict[str, typing.Any]: ...
+    class _StatusNotFoundError(KeyError):
+        pass
+    def _get    (self, entry: list[str], check: dict[str, typing.Any], result: str)                   -> typing.Any           : ...
+    def _set    (self, entry: list[str], check: dict[str, typing.Any], result: dict[str, typing.Any]) -> None                 : ...
+    def _reflect(self, object: object)                                                                -> dict[str, typing.Any]: ...
     _content : typing.Any
-    _noreflect: list[str] = [
-        'context_package', 'preprocessed_file', 'preparsed_file', 'precompiled_file', 'object_file'
-    ]
+    
 
 
 @member(UnitStatusLogger)
@@ -44,43 +53,24 @@ def __init__(self: UnitStatusLogger, build_cache_dir: path) -> None:
     try:
         self._content = json.load(open(f'{build_cache_dir}/unit_status.json', 'r'))
     except:
-        self._content = {
-            'code': {
-                'preprocessed': {}
-            },
-            'header': {
-                'includes': {},
-                'preparsed': {}
-            },
-            'module': {
-                'name': {},
-                'file': {},
-                'includes': {},
-                'imports': {},
-                'precompiled': {}
-            },
-            'source': {
-                'includes': {},
-                'imports': {},
-                'compiled': {}
-            },
-            'object': {
-                'requires': {}
-            }
-        }
+        self._content = {}
 
 @member(UnitStatusLogger)
 def get_code_preprocessed(self: UnitStatusLogger, code: Code) -> bool:
-    return self._get(entry=['code', 'preprocessed', code.file], check={'code': code, 'compiler': compiler}, result='preprocessed')
+    try:
+        return self._get(entry=['code', 'preprocessed', code.file], check={'code': code, 'compiler': compiler}, result='preprocessed')
+    except UnitStatusLogger._StatusNotFoundError:
+        return False
 
 @member(UnitStatusLogger)
 def set_code_preprocessed(self: UnitStatusLogger, code: Code, preprocessed: bool) -> None:
-    return self._set(entry=['code', 'preprocessed', code.file], check={'code': code, 'compiler': compiler}, result={'preprocessed': preprocessed})
+    self._set(entry=['code', 'preprocessed', code.file], check={'code': code, 'compiler': compiler}, result={'preprocessed': preprocessed})
 
 @member(UnitStatusLogger)
 async def async_get_module_name(self: UnitStatusLogger, module: Module) -> str:
-    name = self._get(entry=['module', 'name', module.file], check={'module': module, 'compiler': compiler}, result='name')
-    if name is False:
+    try:
+        name = self._get(entry=['module', 'name', module.file], check={'module': module, 'compiler': compiler}, result='name')
+    except UnitStatusLogger._StatusNotFoundError:
         await module.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*(export\s+)?module\s+(\w+([\.:]\w+)*)\s*;\s*$',
@@ -98,12 +88,13 @@ async def async_get_module_name(self: UnitStatusLogger, module: Module) -> str:
         
 @member(UnitStatusLogger)
 def set_module_name(self: UnitStatusLogger, module: Module, name: str) -> None:
-    return self._set(entry=['module', 'name', module.file], check={'module': module, 'compiler': compiler}, result={'name': name})
+    self._set(entry=['module', 'name', module.file], check={'module': module, 'compiler': compiler}, result={'name': name})
 
 @member(UnitStatusLogger)
 async def async_get_module_imports(self: UnitStatusLogger, module: Module) -> list[path]:
-    imports = self._get(entry=['module', 'imports', module.file], check={'module':  module, 'compiler': compiler}, result='imports')
-    if imports is False:
+    try:
+        imports = self._get(entry=['module', 'imports', module.file], check={'module':  module, 'compiler': compiler}, result='imports')
+    except UnitStatusLogger._StatusNotFoundError:
         await module.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
@@ -111,25 +102,30 @@ async def async_get_module_imports(self: UnitStatusLogger, module: Module) -> li
             flags  =re.MULTILINE
         )
         imports = [f'{module.context_package.search_module_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}' for statement in statements]
-        self.set_module_imports(module=module, imports=imports)
+        await self.async_set_module_imports(module=module, imports=imports)
     return imports
 
 @member(UnitStatusLogger)
-def set_module_imports(self: UnitStatusLogger, module: Module, imports: list[path]) -> None:
-    return self._set(entry=['module', 'imports', module.file], check={'module': module, 'compiler': compiler}, result={'imports': imports})
+async def async_set_module_imports(self: UnitStatusLogger, module: Module, imports: list[path]) -> None:
+    self._set(entry=['module', 'imports', module.file],        check={'module': module,                     'compiler': compiler}, result={'imports': imports})
+    self._set(entry=['object', 'libs',    module.object_file], check={'object': Object(module.object_file), 'compiler': compiler}, result={'libs'   : [module.object_file for module in await when_all([Module.__anew__(Module, import_) for import_ in imports])]})
 
 @member(UnitStatusLogger)
 def get_module_precompiled(self: UnitStatusLogger, module: Module) -> bool:
-    return self._get(entry=['module', 'precompiled', module.file], check={'module': module, 'compiler': compiler}, result='precompiled')
-    
+    try:
+        return self._get(entry=['module', 'precompiled', module.file], check={'module': module, 'compiler': compiler}, result='precompiled')
+    except UnitStatusLogger._StatusNotFoundError:
+        return False
+
 @member(UnitStatusLogger)
 def set_module_precompiled(self: UnitStatusLogger, module: Module, precompiled: bool) -> None:
-    return self._set(entry=['module', 'precompiled', module.file], check={'module': module, 'compiler': compiler}, result={'precompiled': precompiled})
+    self._set(entry=['module', 'precompiled', module.file], check={'module': module, 'compiler': compiler}, result={'precompiled': precompiled})
 
 @member(UnitStatusLogger)
 async def async_get_source_imports(self: UnitStatusLogger, source: Source) -> list[path]:
-    imports = self._get(entry=['source', 'imports', source.file], check={'source': source, 'compiler': compiler}, result='imports')
-    if imports is False:
+    try:
+        imports = self._get(entry=['source', 'imports', source.file], check={'source': source, 'compiler': compiler}, result='imports')
+    except UnitStatusLogger._StatusNotFoundError:
         await source.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
@@ -137,32 +133,68 @@ async def async_get_source_imports(self: UnitStatusLogger, source: Source) -> li
             flags  =re.MULTILINE
         )
         imports = [f'{source.context_package.search_module_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}' for statement in statements]
-        self.set_source_imports(source=source, imports=imports)
+        await self.async_set_source_imports(source=source, imports=imports)
     return imports
 
 @member(UnitStatusLogger)
-def set_source_imports(self: UnitStatusLogger, source: Source, imports: list[path]) -> None:
-    return self._set(entry=['source', 'imports', source.file], check={'source': source, 'compiler': compiler}, result={'imports': imports})
+async def async_set_source_imports(self: UnitStatusLogger, source: Source, imports: list[path]) -> None:
+    self._set(entry=['source', 'imports', source.file],        check={'source': source,                     'compiler': compiler}, result={'imports': imports})
+    self._set(entry=['object', 'libs',    source.object_file], check={'object': Object(source.object_file), 'compiler': compiler}, result={'libs'   : [module.object_file for module in await when_all([Module.__anew__(Module, import_) for import_ in imports])]})
 
 @member(UnitStatusLogger)
 def get_source_compiled(self: UnitStatusLogger, source: Source) -> bool:
-    return self._get(entry=['source', 'compiled', source.file], check={'source': source, 'compiler': compiler}, result='compiled')
+    try:
+        return self._get(entry=['source', 'compiled', source.file], check={'source': source, 'compiler': compiler}, result='compiled')
+    except UnitStatusLogger._StatusNotFoundError:
+        return False
 
 @member(UnitStatusLogger)
 def set_source_compiled(self: UnitStatusLogger, source: Source, compiled: bool) -> None:
-    return self._set(entry=['source', 'compiled', source.file], check={'source': source, 'compiler': compiler}, result={'compiled': compiled})        
+    self._set(entry=['source', 'compiled', source.file], check={'source': source, 'compiler': compiler}, result={'compiled': compiled})        
+
+@member(UnitStatusLogger)
+def get_object_libs(self: UnitStatusLogger, object: Object) -> list[path]:
+    try:
+        return self._get(entry=['object', 'libs', object.file], check={'object': object, 'compiler': compiler}, result='libs')
+    except UnitStatusLogger._StatusNotFoundError:
+        raise LogicError(f'object does not have a libs cache (from a module or source)')
+
+@member(UnitStatusLogger)
+def set_object_libs(self: UnitStatusLogger, object: Object, libs: list[path]) -> None:
+    self._set(entry=['object', 'libs', object.file], check={'object': object, 'compiler': compiler}, result={'libs': libs})
+
+@member(UnitStatusLogger)
+def get_object_shared(self: UnitStatusLogger, object: Object) -> bool:
+    try:
+        return self._get(entry=['object', 'shared', object.file], check={'object': object, 'compiler': compiler}, result='shared')
+    except UnitStatusLogger._StatusNotFoundError:
+        return False
+    
+@member(UnitStatusLogger)
+def set_object_shared(self: UnitStatusLogger, object: Object, shared: bool) -> None:
+    self._set(entry=['object', 'shared', object.file], check={'object': object, 'compiler': compiler}, result={'shared': shared})
+
+@member(UnitStatusLogger)
+def get_object_linked(self: UnitStatusLogger, object: Object) -> bool:
+    try:
+        return self._get(entry=['object', 'linked', object.file], check={'object': object, 'compiler': compiler}, result='linked')
+    except UnitStatusLogger._StatusNotFoundError:
+        return False
+    
+@member(UnitStatusLogger)
+def set_object_linked(self: UnitStatusLogger, object: Object, linked: bool) -> None:
+    self._set(entry=['object', 'linked', object.file], check={'object': object, 'compiler': compiler}, result={'linked': linked})
 
 @member(UnitStatusLogger)
 def _get(self: UnitStatusLogger, entry: list[str], check: dict[str, typing.Any], result: str) -> typing.Any | typing.Literal[False]:
     ptr = self._content
     for subentry in entry:
-        try:
-            ptr = ptr[subentry]
-        except KeyError:
-            return False
+        if subentry not in ptr.keys():
+            raise UnitStatusLogger._StatusNotFoundError()
+        ptr = ptr[subentry]
     for subcheck in check.keys():
         if ptr[subcheck] != self._reflect(ptr[subcheck]):
-            return False
+            raise UnitStatusLogger._StatusNotFoundError()
     return ptr[result]
 
 @member(UnitStatusLogger)

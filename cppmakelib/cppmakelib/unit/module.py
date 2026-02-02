@@ -43,7 +43,7 @@ async def __ainit__(self: Module, file: path) -> None:
 @once
 async def async_precompile(self: Module) -> Precompiled:
     if not await self.async_is_precompiled():
-        await when_all([module.async_precompile() for module in self.import_modules ])
+        await when_all([module.async_precompile() for module in self.import_modules])
         await self.async_preprocess()
         async with scheduler.schedule():
             await compiler.async_precompile(
@@ -52,8 +52,8 @@ async def async_precompile(self: Module) -> Precompiled:
                 object_file     =self.object_file,
                 compile_flags   =self.compile_flags,
                 define_macros   =self.define_macros,
-                include_dirs    =[self.context_package.build_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir, root=False),
-                import_dirs     =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir,  root=False),
+                include_dirs    =[self.context_package.build_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir),
+                import_dirs     =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir),
                 diagnostic_file =self.diagnostic_file,
             )
         self.context_package.unit_status_logger.set_module_precompiled(module=self, precompiled=True)

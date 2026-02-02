@@ -30,7 +30,7 @@ async def async_build(self, package, args):
                 f'-DCMAKE_BUILD_TYPE={config.type}',
                 f'-DCMAKE_CXX_COMPILER={compiler.path}',
                 f'-DCMAKE_CXX_FLAGS={' '.join(compiler.compile_flags + package.compile_flags)}',
-                f'-DCMAKE_PREFIX_PATH={';'.join(recursive_collect(package, next=lambda package: package.require_packages, collect=lambda package: package.install_dir, root=False))}',
+                f'-DCMAKE_PREFIX_PATH={';'.join(recursive_collect(package, next=lambda package: package.require_packages, collect=lambda package: package.install_dir))}',
                 f'-DCMAKE_INSTALL_PREFIX={package.install_dir}',
                 '-DCMAKE_INSTALL_LIBDIR=lib',
                 *args
