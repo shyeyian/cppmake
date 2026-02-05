@@ -26,10 +26,7 @@ class Emcc(Clang):
 @member(Emcc)
 @syncable
 @unique
-async def __ainit__(
-    self: Emcc, 
-    file: path = 'em++'
-) -> None:
+async def __ainit__(self: Emcc, file: path = 'em++') -> None:
     self.file               = file
     self.version            = await self._async_get_version()
     self.stdlib_name        = 'libc++'
@@ -60,9 +57,10 @@ async def _async_get_version(self: Emcc) -> Version:
         )
     except SubprocessError as error:
         raise ConfigError(f'emcc check failed (with file = {self.file})') from error
-    if not stdout.startswith('em++'):
-        raise ConfigError(f'emcc check failed (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "em++ ...")')
-    version = Version.parse(stdout)
+    try:
+        version = Version.parse(pattern=r'^emcc \(.*\) (\d+\.\d+.\d+)', string=stdout)
+    except Version.ParseError as error:
+        raise ConfigError(f'emcc check failed (with file = {self.file})') from error
     if version < 4:
         raise ConfigError(f'emcc version is too old (with file = {self.file}, version = {version}, requires = 4+)')
     return version
@@ -74,6 +72,6 @@ async def _async_get_stdlib_module_file(self: Emcc) -> path:
         try:
             return await Clang._async_get_stdlib_module_file(self)
         except ConfigError as error:
-            raise ConfigError(f'libc++ module_file is not found (with file = {self.file}, subcompiler = clang++)') from error
+            raise ConfigError(f'libc++ module_file is not found (with file = {self.file})') from error
     else:
         raise ConfigError(f'libc++ module_file is not found (with file = {self.file}, clang_stdlib_name = {clang_stdlib_name})')

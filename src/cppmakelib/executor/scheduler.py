@@ -40,7 +40,7 @@ def schedule(self: Scheduler, value: int = 1) -> typing.AsyncContextManager[None
 @member(Scheduler._ContextManager)
 def __init__(self: Scheduler._ContextManager, scheduler: Scheduler, value: int):
     self._scheduler = scheduler
-    self._value    = value
+    self._value     = value
 
 @member(Scheduler._ContextManager)
 async def __aenter__(self: Scheduler._ContextManager) -> None:

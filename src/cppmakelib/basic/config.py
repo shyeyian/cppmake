@@ -2,15 +2,12 @@ from cppmakelib.utility.filesystem import path
 from cppmakelib.system.all         import system
 from cppmakelib.utility.decorator  import member
 import argparse
-import functools
 import os
-import sys
 import typing
 
 class Config(argparse.Namespace):
     def __init__    (self)                            -> None: ...
-    @functools.wraps(argparse.ArgumentParser.add_argument)
-    def add_argument(self, *args: ..., **kwargs: ...) -> None: ...
+    def add_argument(self, *args: ..., **kwargs: ...) -> None: ... # TODO: add typing support, which forwards 'argparse.ArgumentParser.add_argument'. Notice 'functools.wraps' fails on 'self'.
     project : path
     target  : str
     compiler: path
@@ -19,7 +16,7 @@ class Config(argparse.Namespace):
     jobs    : int
     verbose : bool
 
-    _parser: argparse.ArgumentParser
+    _parser : argparse.ArgumentParser
 
 config: Config
 
@@ -45,6 +42,5 @@ def add_argument(self: Config, *args: ..., **kwargs: ...) -> None:
 
 config = Config()
 
-sys.dont_write_bytecode = True
 os.chdir(config.project)
 os.environ['LANG'] = 'C'

@@ -17,10 +17,10 @@ def _choose_compiler() -> Clang | Emcc | Gcc:
         except ConfigError as error:
             errors += [error]
     if len(matches) == 0:
-        raise ConfigError(f'compiler is not supported (with path = {config.compiler}, matches = {matches})') from ExceptionGroup('no compiler is matched', errors)
+        raise ConfigError(f'compiler is not recognized (with file = {config.compiler})') from ExceptionGroup('no compiler is matched', errors)
     elif len(matches) == 1:
         return matches[0]
     else:
-        raise ConfigError(f'compiler is ambiguous (with path = {config.compiler}, matches = {matches})')
+        raise ConfigError(f'compiler is ambiguous (with file = {config.compiler}, matches = {matches})')
 
 compiler = _choose_compiler()

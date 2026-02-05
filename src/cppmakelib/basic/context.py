@@ -1,6 +1,7 @@
-from cppmakelib.unit.package      import Package
 from cppmakelib.utility.decorator import member
 import typing
+if typing.TYPE_CHECKING:
+    from cppmakelib.unit.package import Package
 
 class Context:
     def switch(self, package: Package) -> typing.ContextManager[None]: ...
@@ -10,9 +11,9 @@ class Context:
         def __init__ (self, context: Context, package: Package)      -> None: ...
         def __enter__(self)                                          -> None: ...
         def __exit__ (self, *args: typing.Any, **kwargs: typing.Any) -> None: ...
-        context    : Context
-        old_package: Package
-        new_package: Package
+        _context    : Context
+        _old_package: Package
+        _new_package: Package
 
 context: Context
 
@@ -24,16 +25,16 @@ def switch(self: Context, package: Package) -> typing.ContextManager[None]:
 
 @member(Context._ContextManager)
 def __init__(self: Context._ContextManager, context: Context, package: Package) -> None:
-    self.context     = context
-    self.old_package = context.package
-    self.new_package = package
+    self._context     = context
+    self._old_package = context.package
+    self._new_package = package
 
 @member(Context._ContextManager)
 def __enter__(self: Context._ContextManager) -> None:
-    self.context.package = self.new_package
+    self._context.package = self._new_package
 
 @member(Context._ContextManager)
 def __exit__(self: Context._ContextManager, *args: typing.Any, **kwargs: typing.Any) -> None:
-    self.context.package = self.old_package
+    self._context.package = self._old_package
 
 context = Context()

@@ -13,8 +13,8 @@ import typing
 
 class UnitStatusLogger:
     # ========
-    def __init__                          (self, build_cache_dir: path)                     -> None      : ...
-    def __del__                           (self)                                            -> None      : ...
+    def           __init__                (self, build_cache_dir: path)                     -> None      : ...
+    def           __del__                 (self)                                            -> None      : ...
     # ========
     def             get_code_preprocessed (self, code  : Code)                              -> bool      : ...
     def             set_code_preprocessed (self, code  : Code,    preprocessed: bool)       -> None      : ...
@@ -44,16 +44,24 @@ class UnitStatusLogger:
     def _get    (self, entry: list[str], check: dict[str, typing.Any], result: str)                   -> typing.Any           : ...
     def _set    (self, entry: list[str], check: dict[str, typing.Any], result: dict[str, typing.Any]) -> None                 : ...
     def _reflect(self, object: object)                                                                -> dict[str, typing.Any]: ...
-    _content : typing.Any
+    _file   : path
+    _content: typing.Any
     
 
 
 @member(UnitStatusLogger)
 def __init__(self: UnitStatusLogger, build_cache_dir: path) -> None:
-    try:
-        self._content = json.load(open(f'{build_cache_dir}/unit_status.json', 'r'))
-    except:
-        self._content = {}
+    self._file = f'{build_cache_dir}/unit_status.json'
+    with open(self._file, 'r') as reader:
+        try:
+            self._content = json.load(reader)
+        except:
+            self._content = {}
+
+@member(UnitStatusLogger)
+def __del__(self: UnitStatusLogger) -> None:
+    with open(self._file, 'w') as writer:
+        json.dump(self._content, writer, indent=4)
 
 @member(UnitStatusLogger)
 def get_code_preprocessed(self: UnitStatusLogger, code: Code) -> bool:
@@ -98,7 +106,7 @@ async def async_get_module_imports(self: UnitStatusLogger, module: Module) -> li
         await module.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
-            string =open(module.preprocessed_file, 'r').read(),
+            string =open(module.preprocessed_file).read(),
             flags  =re.MULTILINE
         )
         imports = [f'{module.context_package.search_module_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}' for statement in statements]
@@ -129,7 +137,7 @@ async def async_get_source_imports(self: UnitStatusLogger, source: Source) -> li
         await source.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
-            string =open(source.preprocessed_file, 'r').read(),
+            string =open(source.preprocessed_file).read(),
             flags  =re.MULTILINE
         )
         imports = [f'{source.context_package.search_module_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}' for statement in statements]
@@ -186,7 +194,7 @@ def set_object_linked(self: UnitStatusLogger, object: Object, linked: bool) -> N
     self._set(entry=['object', 'linked', object.file], check={'object': object, 'compiler': compiler}, result={'linked': linked})
 
 @member(UnitStatusLogger)
-def _get(self: UnitStatusLogger, entry: list[str], check: dict[str, typing.Any], result: str) -> typing.Any | typing.Literal[False]:
+def _get(self: UnitStatusLogger, entry: list[str], check: dict[str, typing.Any], result: str) -> typing.Any:
     ptr = self._content
     for subentry in entry:
         if subentry not in ptr.keys():

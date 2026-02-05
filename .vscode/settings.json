@@ -9,6 +9,8 @@
         "reportUnusedImport": "warning",
         "reportUnusedVariable": "warning"
     },
-    "python.REPL.enableREPLSmartSend": false,
-    "outline.showVariables": false
+    "outline.showVariables": false,
+    "files.exclude": {
+        "**/__pycache__": true
+    }
 }

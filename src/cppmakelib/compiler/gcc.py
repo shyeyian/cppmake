@@ -2,9 +2,8 @@ from cppmakelib.basic.config         import config
 from cppmakelib.error.config         import ConfigError
 from cppmakelib.error.subprocess     import SubprocessError
 from cppmakelib.executor.run         import async_run
-from cppmakelib.logger.module_mapper import module_mapper_logger
 from cppmakelib.utility.decorator    import member, syncable, unique
-from cppmakelib.utility.filesystem   import create_dir, exist_file, parent_dir, path
+from cppmakelib.utility.filesystem   import create_dir, exist_file, iterate_dir, parent_dir, path
 from cppmakelib.utility.version      import Version
 import re
 
@@ -37,23 +36,21 @@ class Gcc:
     link_flags         : list[str]
     define_macros      : dict[str, str]
 
-    async def _async_get_version           (self) -> Version: ...
-    async def _async_get_stdlib_module_file(self) -> path   : ...
+    async def _async_get_version           (self)                                             -> Version: ...
+    async def _async_get_stdlib_module_file(self)                                             -> path   : ...
+    def       _write_mapper                (self, target_file: path, import_dirs: list[path]) -> path   : ...
 
 
 
 @member(Gcc)
 @syncable
 @unique
-async def __ainit__(
-    self: Gcc, 
-    file: path = 'g++'
-) -> None:
+async def __ainit__(self: Gcc, file: path = 'g++') -> None:
     self.file               = file
     self.version            = await self._async_get_version()
     self.stdlib_module_file = await self._async_get_stdlib_module_file()
     self.compile_flags = [
-       f'-std={config.std}', '-fmodules', 
+        f'-std={config.std}', '-fmodules', 
         *(['-O0', '-g'] if config.type == 'debug'   else
           ['-O3']       if config.type == 'release' else
           ['-Os']       if config.type == 'size'    else 
@@ -113,7 +110,8 @@ async def async_preparse(
             *([f'-fdiagnostics-add-output=sarif:file={diagnostic_file}'] if diagnostic_file is not None else []),
             '-c', '-x', 'c++-header', header_file,
             '-o', preparsed_file
-        ]
+        ],
+        log_command=header_file
     )
     
 
@@ -139,11 +137,12 @@ async def async_precompile(
             *(self.compile_flags + compile_flags),
             *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
             *[f'-I{include_dir}' for include_dir in include_dirs],
-            *[f'-fmodule-mapper={module_mapper_logger.mapper_file_of(import_dir=import_dir)}' for import_dir in import_dirs],
+            f'-fmodule-mapper={self._write_mapper(target_file=precompiled_file, import_dirs=import_dirs)}',
             *([f'-fdiagnostics-add-output=sarif:file={diagnostic_file}'] if diagnostic_file is not None else []),
             '-c', '-x', 'c++-module', module_file,
             '-o', object_file
-        ]
+        ],
+        log_command=module_file
     )
 
 @member(Gcc)
@@ -152,10 +151,10 @@ async def async_compile(
     self           : Gcc, 
     source_file    : path,
     object_file    : path,
-    compile_flags  : list[str] = [],
+    compile_flags  : list[str]      = [],
     define_macros  : dict[str, str] = {}, 
-    include_dirs   : list[path] =[], 
-    import_dirs    : list[path] = [], 
+    include_dirs   : list[path]     = [], 
+    import_dirs    : list[path]     = [], 
     diagnostic_file: path | None = None
 ) -> None:
     create_dir(parent_dir(object_file))
@@ -166,11 +165,12 @@ async def async_compile(
             *(self.compile_flags + compile_flags),
             *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
             *[f'-I{include_dir}' for include_dir in include_dirs],
-            *[f'-fmodule-mapper={module_mapper_logger.mapper_file_of(import_dir=import_dir)}' for import_dir in import_dirs],
+            f'-fmodule-mapper={self._write_mapper(target_file=object_file, import_dirs=import_dirs)}',
             *([f'-fdiagnostics-add-output=sarif:file={diagnostic_file}'] if diagnostic_file is not None else []),
             '-c', '-x', 'c++', source_file,
             '-o', object_file
-        ]
+        ],
+        log_command=source_file
     )
 
 @member(Gcc)
@@ -202,9 +202,10 @@ async def _async_get_version(self: Gcc) -> Version:
         )
     except SubprocessError as error:
         raise ConfigError(f'gcc check failed (with file = {self.file})') from error
-    if not stdout.startswith('g++'):
-        raise ConfigError(f'gcc check failed (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "g++ ...")')
-    version = Version.parse(stdout)
+    try:
+        version = Version.parse(pattern=r'^g++\w* \(.*\) (\d+\.\d+\.\d+)', string=stdout)
+    except Version.ParseError as error:
+        raise ConfigError(f'gcc check failed (with file = {self.file})') from error
     if version < 15:
         raise ConfigError(f'gcc version is too old (with file = {self.file}, version = {version}, requires = 15+)')
     return version
@@ -224,10 +225,10 @@ async def _async_get_stdlib_module_file(self: Gcc) -> path:
     search_dirs = re.search(
         pattern=r'^#include <...> search starts here:$\n(.*)\n^end of search list.$', 
         string=stderr, 
-        flags=re.MULTILINE | re.DOTALL | re.IGNORECASE
+        flags=re.DOTALL | re.IGNORECASE | re.MULTILINE
     )
     if search_dirs is None:
-        raise ConfigError(f'libstdc++ module_file is not found (with subprocess = "{self.file} -v -E -x c++ -", stdout = ..., requires = "... #include <...> starts here ... end of search list ...")')
+        raise ConfigError(f'libstdc++ module_file is not found')
     search_dirs  = [path(search_dir.strip())    for search_dir in search_dirs.group(1).splitlines()]
     search_files = [f'{search_dir}/bits/std.cc' for search_dir in search_dirs]
     for search_file in search_files:
@@ -235,3 +236,14 @@ async def _async_get_stdlib_module_file(self: Gcc) -> path:
             return search_file
     else:
         raise ConfigError(f'libstdc++ module_file is not found (with search_files = {search_files})')
+
+@member(Gcc)
+def _write_mapper(self: Gcc, target_file: path, import_dirs: list[path]) -> path:
+    mapper_file = f'{target_file.rpartition('.')[0]}.mapper'
+    with open(mapper_file, 'w') as writer:
+        for import_dir in import_dirs:
+            for file in iterate_dir(import_dir):
+                name = file.split('/')[-1].removesuffix(self.precompiled_suffix).replace('-', ':') # TODO: get rid of split('/').
+                writer.write(f'{name} {file}\n')
+    return mapper_file
+    

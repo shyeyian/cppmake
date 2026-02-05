@@ -37,10 +37,7 @@ class Clang(Gcc):
 @member(Clang)
 @syncable
 @unique
-async def __ainit__(
-    self: Clang, 
-    file: path = 'clang++'
-) -> None:
+async def __ainit__(self: Clang, file: path = 'clang++') -> None:
     self.file               = file
     self.version            = await self._async_get_version()
     self.stdlib_name        = await self._async_get_stdlib_name()
@@ -156,9 +153,10 @@ async def _async_get_version(self: Clang) -> Version:
         )
     except SubprocessError as error:
         raise ConfigError(f'clang check failed (with file = {self.file})') from error
-    if not stdout.startswith('clang') and 'clang version' not in stdout:
-        raise ConfigError(f'clang check failed (with file = {self.file}, subprocess = "{self.file} --version", stdout = "{stdout.splitlines()[0]} ...", requires = "clang++ ..." or "... clang version ...")')
-    version = Version.parse(stdout)
+    try:
+        version = Version.parse(pattern=r'clang version (\d+\.\d+\.\d+)', string=stdout)
+    except Version.ParseError as error:
+        raise ConfigError(f'clang check failed (with file = {self.file})') from error
     if version < 21:
         raise ConfigError(f'clang version is too old (with file = {self.file}, version = {version}, requires = 21+)')
     return version

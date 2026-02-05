@@ -1,10 +1,7 @@
-from cppmakelib.basic.context      import context
 from cppmakelib.executor.operation import sync_wait
 from cppmakelib.utility.filesystem import path, relative_path
 import asyncio
-import functools
 import inspect
-import threading
 import typing
 
 def implement  [**Ts, R](func: typing.Callable[Ts, R])                                                            -> typing.Callable[Ts, R]                                                           : ...
@@ -62,6 +59,7 @@ def once[S, R](func: typing.Callable[[S], typing.Coroutine[typing.Any, typing.An
 
 def relocatable[S, R](func: typing.Callable[[S, path], R]) -> typing.Callable[[S, path], R]:
     def relocatable_func(self: S, path: path) -> R:
+        from cppmakelib.basic.context import context
         relocated_path = relative_path(from_path='.', to_path=f'{context.package.dir}/{path}')
         return func(self, relocated_path)
     relocatable_func.__name__ = func.__name__
