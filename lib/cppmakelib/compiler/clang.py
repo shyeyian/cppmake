@@ -62,6 +62,31 @@ async def __ainit__(self: Clang, file: path = 'clang++') -> None:
 
 @member(Clang)
 @syncable
+async def async_preparse(
+    self           : Gcc,
+    header_file    : path,
+    preparsed_file : path,
+    compile_flags  : list[str]      = [],
+    define_macros  : dict[str, str] = {},
+    include_dirs   : list[path]     = [],
+    diagnostic_file: path | None    = None
+) -> None:
+    create_dir(parent_dir(preparsed_file))
+    await async_run(
+        file=self.file,
+        args=[
+            *(self.compile_flags + compile_flags),
+            *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
+            *[f'-I{include_dir}' for include_dir in include_dirs],
+            '-c', '-x', 'c++-header', header_file,
+            '-o', preparsed_file
+        ],
+        log_command=header_file
+    )
+
+
+@member(Clang)
+@syncable
 async def async_precompile(
     self            : Clang, 
     module_file     : path, 
@@ -84,7 +109,8 @@ async def async_precompile(
             *[f'-fprebuilt-module-path={import_dir}' for import_dir in import_dirs],
             '--precompile', '-x', 'c++-module', module_file,
             '-o', precompiled_file
-        ]
+        ],
+        log_command=module_file
     )
     await async_run(
         file=self.file,
@@ -92,29 +118,6 @@ async def async_precompile(
             *[f'-fprebuilt-module-path={import_dir}' for import_dir in import_dirs],
             '-c', module_file,
             '-o', object_file
-        ]
-    )
-
-@member(Gcc)
-@syncable
-async def async_preparse(
-    self           : Gcc,
-    header_file    : path,
-    preparsed_file : path,
-    compile_flags  : list[str]      = [],
-    define_macros  : dict[str, str] = {},
-    include_dirs   : list[path]     = [],
-    diagnostic_file: path | None    = None
-) -> None:
-    create_dir(parent_dir(preparsed_file))
-    await async_run(
-        file=self.file,
-        args=[
-            *(self.compile_flags + compile_flags),
-            *[f'-D{key}={value}' for key, value  in (self.define_macros | define_macros).items()],
-            *[f'-I{include_dir}' for include_dir in include_dirs],
-            '-c', '-x', 'c++-header', header_file,
-            '-o', preparsed_file
         ]
     )
 
@@ -140,7 +143,8 @@ async def async_compile(
             *[f'-fprebuilt-module-path={import_dir}' for import_dir in import_dirs],
             '-c', '-x', 'c++', source_file,
             '-o', object_file
-        ]
+        ],
+        log_command=source_file
     )
 
 @member(Clang)
@@ -154,7 +158,7 @@ async def _async_get_version(self: Clang) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'clang check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'clang version (\d+\.\d+\.\d+)', string=stdout)
+        version = Version.parse(pattern=r'clang version (\d+)\.(\d+)\.(\d+)', string=stdout)
     except Version.ParseError as error:
         raise ConfigError(f'clang check failed (with file = {self.file})') from error
     if version < 21:

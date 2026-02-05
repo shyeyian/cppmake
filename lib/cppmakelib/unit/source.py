@@ -7,7 +7,7 @@ from cppmakelib.unit.module        import Module
 from cppmakelib.unit.object        import Object
 from cppmakelib.utility.algorithm  import recursive_collect
 from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
-from cppmakelib.utility.filesystem import path
+from cppmakelib.utility.filesystem import path, relative_path, replace_suffix_file
 
 class Source(Code):
     def           __new__      (cls: ..., file: path) -> Source: ...
@@ -18,7 +18,6 @@ class Source(Code):
     async def async_compile    (self)                 -> Object: ...
     def             is_compiled(self)                 -> bool  : ...
     async def async_is_compiled(self)                 -> bool  : ...
-    name           : str
     object_file    : path
     diagnostic_file: path
     import_modules : list[Module]
@@ -31,8 +30,8 @@ class Source(Code):
 @unique
 async def __ainit__(self: Source, file: path) -> None:
     await super(Source, self).__ainit__(file)
-    self.object_file     = f'{self.context_package.build_source_dir}/{self.name}{system.object_suffix}'
-    self.diagnostic_file = f'{self.context_package.build_source_dir}/{self.name}{system.executable_suffix}'
+    self.object_file     = f'{self.context_package.build_dir}/{replace_suffix_file(relative_path(from_path=self.context_package.dir, to_path=file), system.object_suffix)}'
+    self.diagnostic_file = f'{self.context_package.build_dir}/{replace_suffix_file(relative_path(from_path=self.context_package.dir, to_path=file), compiler.diagnostic_suffix)}'
     self.import_modules  = await when_all([Module.__anew__(Module, file) for file in await self.context_package.unit_status_logger.async_get_source_imports(source=self)])
 
 @member(Source)
@@ -43,13 +42,14 @@ async def async_compile(self: Source) -> Object:
         await when_all([module.async_precompile() for module in self.import_modules ])
         await self.async_preprocess()
         async with scheduler.schedule():
+            print(f'compile source {self.file}')
             await compiler.async_compile(
                 source_file    =self.file,
                 object_file    =self.object_file,
                 compile_flags  =self.compile_flags,
                 define_macros  =self.define_macros,
-                include_dirs   =[self.context_package.build_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir),
-                import_dirs    =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir),                    
+                include_dirs   =[self.context_package.build_include_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir),
+                import_dirs    =[self.context_package.build_import_dir]  + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir),                    
                 diagnostic_file=self.diagnostic_file,
             )
         self.context_package.unit_status_logger.set_source_compiled(source=self, compiled=True)

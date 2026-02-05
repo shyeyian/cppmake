@@ -60,7 +60,7 @@ async def async_build(
             file=self.file,
             args=[
                 '-C', build_dir,
-                '-j', str(config.parallel)
+                '-j', str(config.jobs)
             ]
         )
     except:
@@ -72,7 +72,7 @@ async def async_build(
             args=[
                 'install'
                 '-C', build_dir,
-                '-j', str(config.parallel)
+                '-j', str(config.jobs)
             ]
         )
     except:
@@ -90,7 +90,7 @@ async def _async_get_version(self: Makefile) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'makefile check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^GNU Make (\d+\.\d+\.\d+)', string=stdout)
+        version = Version.parse(pattern=r'^GNU Make (\d+)\.(\d+)\.(\d+)', string=stdout)
     except Version.ParseError as error:
         raise ConfigError(f'makefile check failed (with file = {self.file})') from error
     if version < 3:

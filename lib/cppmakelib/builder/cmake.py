@@ -64,7 +64,7 @@ async def async_build(
             file=self.file,
             args=[
                 '--build', build_dir,
-                '-j',      str(config.parallel)
+                '-j',      str(config.jobs)
             ]
         )
     except:
@@ -75,7 +75,7 @@ async def async_build(
             file=self.file,
             args=[
                 '--install', build_dir,
-                '-j',        str(config.parallel)
+                '-j',        str(config.jobs)
             ]
         )
     except:
@@ -94,7 +94,7 @@ async def _async_get_version(self: Cmake) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'cmake check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^cmake version (\d+\.\d+\.\d+)', string=stdout)
+        version = Version.parse(pattern=r'^cmake version (\d+)\.(\d+)\.(\d+)', string=stdout)
     except Version.ParseError as error:
         raise ConfigError(f'cmake check failed (with file = {self.file})') from error
     if version < 4:

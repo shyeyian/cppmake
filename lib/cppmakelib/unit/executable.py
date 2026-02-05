@@ -1,8 +1,9 @@
 from cppmakelib.error.subprocess    import SubprocessError
-from cppmakelib.executor.run        import async_run
-from cppmakelib.unit.binary         import Binary
-from cppmakelib.utility.decorator   import member, once, syncable, unique
-from cppmakelib.utility.filesystem  import path
+from cppmakelib.executor.run       import async_run
+from cppmakelib.executor.scheduler import scheduler
+from cppmakelib.unit.binary        import Binary
+from cppmakelib.utility.decorator  import member, once, syncable, unique
+from cppmakelib.utility.filesystem import path
 
 class Executable(Binary):
     def           __new__  (cls,  file: path) -> Executable: ...
@@ -23,13 +24,17 @@ def __init__(self: Executable, file: path) -> None:
 @syncable
 @once
 async def async_execute(self: Executable) -> None:
-    try:
-        await async_run(file=self.file)
-    except SubprocessError:
-        pass
+    async with scheduler.schedule():
+        print(f'execute executable {self.file}')
+        try:
+            await async_run(file=self.file, print_stdout=True, print_stderr=True)
+        except SubprocessError:
+            pass
 
 @member(Executable)
 @syncable
 @once
 async def async_test(self: Executable) -> None:
-    await async_run(file=self.file)
+    async with scheduler.schedule():
+        print(f'test executable {self.file}')
+        await async_run(file=self.file, print_stdout=True, print_stderr=True)

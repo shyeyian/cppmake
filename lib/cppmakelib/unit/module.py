@@ -7,7 +7,6 @@ from cppmakelib.unit.precompiled   import Precompiled
 from cppmakelib.utility.algorithm  import recursive_collect
 from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
 from cppmakelib.utility.filesystem import path
-import typing
 
 class Module(Code):
     def           __new__         (cls: ..., file: path) -> Module     : ...
@@ -33,9 +32,9 @@ class Module(Code):
 async def __ainit__(self: Module, file: path) -> None:
     await super(Module, self).__ainit__(file)
     self.name             = await self.context_package.unit_status_logger.async_get_module_name(module=self)
-    self.precompiled_file = f'{self.context_package.build_module_dir}/{self.name.replace(':', '-')}{compiler.precompiled_suffix}'
-    self.object_file      = f'{self.context_package.build_module_dir}/{self.name.replace(':', '-')}{system.object_suffix}'
-    self.diagnostic_file  = f'{self.context_package.build_module_dir}/{self.name.replace(':', '.')}{compiler.diagnostic_suffix}'
+    self.precompiled_file = f'{self.context_package.build_import_dir}/{self.name.replace(':', '-')}{compiler.precompiled_suffix}'
+    self.object_file      = f'{self.context_package.build_import_dir}/{self.name.replace(':', '-')}{system.object_suffix}'
+    self.diagnostic_file  = f'{self.context_package.build_import_dir}/{self.name.replace(':', '.')}{compiler.diagnostic_suffix}'
     self.import_modules   = await when_all([Module.__anew__(Module, file) for file in await self.context_package.unit_status_logger.async_get_module_imports(module=self)])
 
 @member(Module)
@@ -46,14 +45,15 @@ async def async_precompile(self: Module) -> Precompiled:
         await when_all([module.async_precompile() for module in self.import_modules])
         await self.async_preprocess()
         async with scheduler.schedule():
+            print(f'precompile module {self.file}')
             await compiler.async_precompile(
                 module_file     =self.file,
                 precompiled_file=self.precompiled_file,
                 object_file     =self.object_file,
                 compile_flags   =self.compile_flags,
                 define_macros   =self.define_macros,
-                include_dirs    =[self.context_package.build_header_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir),
-                import_dirs     =[self.context_package.build_module_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir),
+                include_dirs    =[self.context_package.build_include_dir] + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_include_dir),
+                import_dirs     =[self.context_package.build_import_dir]  + recursive_collect(self.context_package, next=lambda package: package.require_packages, collect=lambda package: package.install_import_dir),
                 diagnostic_file =self.diagnostic_file,
             )
         self.context_package.unit_status_logger.set_module_precompiled(module=self, precompiled=True)

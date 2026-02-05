@@ -5,15 +5,15 @@ from cppmakelib.unit.code          import Code
 from cppmakelib.unit.module        import Module
 from cppmakelib.unit.object        import Object
 from cppmakelib.unit.source        import Source
-from cppmakelib.utility.filesystem import path
 from cppmakelib.utility.decorator  import member
+from cppmakelib.utility.filesystem import create_dir, parent_dir, path
 import json
 import re
 import typing
 
 class UnitStatusLogger:
     # ========
-    def           __init__                (self, build_cache_dir: path)                     -> None      : ...
+    def           __init__                (self, build_utility_dir: path)                   -> None      : ...
     def           __del__                 (self)                                            -> None      : ...
     # ========
     def             get_code_preprocessed (self, code  : Code)                              -> bool      : ...
@@ -50,18 +50,17 @@ class UnitStatusLogger:
 
 
 @member(UnitStatusLogger)
-def __init__(self: UnitStatusLogger, build_cache_dir: path) -> None:
-    self._file = f'{build_cache_dir}/unit_status.json'
-    with open(self._file, 'r') as reader:
-        try:
-            self._content = json.load(reader)
-        except:
-            self._content = {}
+def __init__(self: UnitStatusLogger, build_utility_dir: path) -> None:
+    self._file = f'{build_utility_dir}/unit_status.json'
+    try:
+        self._content = json.load(open(self._file, 'r'))
+    except:
+        self._content = {}
 
 @member(UnitStatusLogger)
 def __del__(self: UnitStatusLogger) -> None:
-    with open(self._file, 'w') as writer:
-        json.dump(self._content, writer, indent=4)
+    create_dir(parent_dir(self._file))
+    json.dump(self._content, open(self._file, 'w'), indent=4)
 
 @member(UnitStatusLogger)
 def get_code_preprocessed(self: UnitStatusLogger, code: Code) -> bool:
@@ -82,7 +81,7 @@ async def async_get_module_name(self: UnitStatusLogger, module: Module) -> str:
         await module.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*(export\s+)?module\s+(\w+([\.:]\w+)*)\s*;\s*$',
-            string =open(module.preprocessed_file).read(),
+            string =open(module.preprocessed_file, 'r').read(),
             flags  =re.MULTILINE
         )
         if len(statements) == 0:
@@ -105,11 +104,11 @@ async def async_get_module_imports(self: UnitStatusLogger, module: Module) -> li
     except UnitStatusLogger._StatusNotFoundError:
         await module.async_preprocess()
         statements = re.findall(
-            pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
-            string =open(module.preprocessed_file).read(),
+            pattern=r'^\s*(export\s+)?import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
+            string =open(module.preprocessed_file, 'r').read(),
             flags  =re.MULTILINE
         )
-        imports = [f'{module.context_package.search_module_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}' for statement in statements]
+        imports = [f'{module.context_package.import_dir}/{statement.group(2).replace('.', '/').replace(':', '/')}.cpp' for statement in statements]
         await self.async_set_module_imports(module=module, imports=imports)
     return imports
 
@@ -137,10 +136,10 @@ async def async_get_source_imports(self: UnitStatusLogger, source: Source) -> li
         await source.async_preprocess()
         statements = re.findall(
             pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
-            string =open(source.preprocessed_file).read(),
+            string =open(source.preprocessed_file, 'r').read(),
             flags  =re.MULTILINE
         )
-        imports = [f'{source.context_package.search_module_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}' for statement in statements]
+        imports = [f'{source.context_package.import_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}.cpp' for statement in statements]
         await self.async_set_source_imports(source=source, imports=imports)
     return imports
 

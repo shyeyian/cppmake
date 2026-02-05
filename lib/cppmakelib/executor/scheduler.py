@@ -4,8 +4,8 @@ import asyncio
 import typing
 
 class Scheduler:
-    def __init__(self, value: int = config.parallel) -> None                            : ...
-    def schedule(self, value: int = 1)               -> typing.AsyncContextManager[None]: ...
+    def __init__(self, value: int = config.jobs) -> None                            : ...
+    def schedule(self, value: int = 1)           -> typing.AsyncContextManager[None]: ...
     max: int
 
     class _ContextManager:
@@ -27,7 +27,7 @@ scheduler: Scheduler
 
 
 @member(Scheduler)
-def __init__(self: Scheduler, value: int = config.parallel) -> None:
+def __init__(self: Scheduler, value: int = config.jobs) -> None:
     assert value >= 0
     self.max      = value
     self._value   = value

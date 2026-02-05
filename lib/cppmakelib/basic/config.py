@@ -1,6 +1,6 @@
-from cppmakelib.utility.filesystem import path
 from cppmakelib.system.all         import system
 from cppmakelib.utility.decorator  import member
+from cppmakelib.utility.filesystem import path
 import argparse
 import os
 import typing

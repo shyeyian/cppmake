@@ -10,3 +10,4 @@ class Dynamic(Binary):
 @unique
 def __init__(self: Dynamic, file: path) -> None:
     super(Dynamic, self).__init__(file)
+    

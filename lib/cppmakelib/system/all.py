@@ -16,7 +16,7 @@ def _choose_system() -> Linux | Macos | Windows:
         except ConfigError as error:
             errors += [error]
     if len(matches) == 0:
-        raise ConfigError(f'system is not recognized (with matches = {matches})') from ExceptionGroup('no system is matched', errors)
+        raise ConfigError(f'system is not recognized') from ExceptionGroup('no system is matched', errors)
     elif len(matches) == 1:
         return matches[0]
     else:

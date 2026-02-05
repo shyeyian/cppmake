@@ -4,7 +4,6 @@ from cppmakelib.executor.operation      import when_all
 from cppmakelib.executor.scheduler      import Scheduler
 from cppmakelib.utility.filesystem      import path
 from cppmakelib.logger.compile_commands import compile_commands_logger
-from cppmakelib.logger.make_progress    import make_progress_logger``
 from cppmakelib.utility.decorator       import syncable
 import asyncio
 import sys
@@ -33,25 +32,25 @@ if typing.TYPE_CHECKING:
 
 
 
-_internal_scheduler = Scheduler(config.parallel)
+_internal_scheduler = Scheduler(config.jobs)
 
 @syncable
 async def async_run(
-    file          : path,
-    args          : list[str]   = [], 
-    cwd           : path        = '.', 
-    print_command : bool        = config.verbose,
-    print_stdout  : bool        = config.verbose,
-    print_stderr  : bool        = True,
-    log_command   : path | None = None,
-    log_stdout    : path | None = None,
-    log_stderr    : path | None = None,
-    return_stdout : bool        = False,
-    return_stderr : bool        = False,
+    file         : path,
+    args         : list[str]   = [], 
+    cwd          : path        = '.', 
+    print_command: bool        = config.verbose,
+    print_stdout : bool        = config.verbose,
+    print_stderr : bool        = True,
+    log_command  : path | None = None,
+    log_stdout   : path | None = None,
+    log_stderr   : path | None = None,
+    return_stdout: bool        = False,
+    return_stderr: bool        = False,
 ) -> None | str | tuple[str, str]:
     async with _internal_scheduler.schedule():
         if print_command:
-            make_progress_logger.info(' '.join([file] + args))
+            print(' '.join([file] + args))
         if log_command is not None:
             compile_commands_logger.log(file=log_command, command=[file] + args)
         proc = await asyncio.subprocess.create_subprocess_exec(
@@ -79,11 +78,9 @@ async def async_run(
             read(stream=proc.stderr, tee=sys.stderr if print_stderr else None)
         ])
         if log_stdout is not None:
-            with open(log_stdout, 'w') as logger:
-                logger.write(stdout)
+            open(log_stdout, 'w').write(stdout)
         if log_stderr is not None:
-            with open(log_stderr, 'w') as logger:
-                logger.write(stderr)
+            open(log_stderr, 'w').write(stderr)
         exit_code = await proc.wait()
         if exit_code == 0:
             if not return_stdout and not return_stderr:

@@ -203,7 +203,7 @@ async def _async_get_version(self: Gcc) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'gcc check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^g++\w* \(.*\) (\d+\.\d+\.\d+)', string=stdout)
+        version = Version.parse(pattern=r'^g++\w* \(.*\) (\d+)\.(\d+)\.(\d+)', string=stdout)
     except Version.ParseError as error:
         raise ConfigError(f'gcc check failed (with file = {self.file})') from error
     if version < 15:
@@ -218,14 +218,13 @@ async def _async_get_stdlib_module_file(self: Gcc) -> path:
             *self.compile_flags,
             '-E', '-x', 'c++', '-',
             '-v' 
-        ], 
-        print_stderr =config.verbose, 
+        ],
         return_stderr=True
     )
     search_dirs = re.search(
-        pattern=r'^#include <...> search starts here:$\n(.*)\n^end of search list.$', 
-        string=stderr, 
-        flags=re.DOTALL | re.IGNORECASE | re.MULTILINE
+        pattern=r'^#include <...> search starts here:$\n(^.*$\n)*^End of search list.$', 
+        string =stderr, 
+        flags  =re.MULTILINE
     )
     if search_dirs is None:
         raise ConfigError(f'libstdc++ module_file is not found')
@@ -240,10 +239,11 @@ async def _async_get_stdlib_module_file(self: Gcc) -> path:
 @member(Gcc)
 def _write_mapper(self: Gcc, target_file: path, import_dirs: list[path]) -> path:
     mapper_file = f'{target_file.rpartition('.')[0]}.mapper'
-    with open(mapper_file, 'w') as writer:
-        for import_dir in import_dirs:
-            for file in iterate_dir(import_dir):
-                name = file.split('/')[-1].removesuffix(self.precompiled_suffix).replace('-', ':') # TODO: get rid of split('/').
-                writer.write(f'{name} {file}\n')
+    writer = open(mapper_file, 'w')
+    for import_dir in import_dirs:
+        for file in iterate_dir(import_dir):
+            name = file.split('/')[-1].removesuffix(self.precompiled_suffix).replace('-', ':') # TODO: get rid of split('/').
+            writer.write(f'{name} {file}\n')
+    writer.close()
     return mapper_file
     

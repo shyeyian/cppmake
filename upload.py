@@ -1,4 +1,3 @@
-import pathlib
 import re
 import shutil
 import subprocess
@@ -44,7 +43,7 @@ try:
     )
 finally:
     shutil.rmtree('dist')
-    shutil.rmtree(pathlib.Path()/'src'/'cppmake.egg-info')
+    shutil.rmtree('cppmake.egg-info')
 
 # Git push
 subprocess.run(['git', 'add', '.'])

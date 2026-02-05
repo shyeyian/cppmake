@@ -58,7 +58,7 @@ async def _async_get_version(self: Emcc) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'emcc check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^emcc \(.*\) (\d+\.\d+.\d+)', string=stdout)
+        version = Version.parse(pattern=r'^emcc \(.*\) (\d+)\.(\d+)\.(\d+)', string=stdout)
     except Version.ParseError as error:
         raise ConfigError(f'emcc check failed (with file = {self.file})') from error
     if version < 4:

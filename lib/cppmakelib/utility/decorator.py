@@ -28,23 +28,13 @@ if typing.TYPE_CHECKING:
 # Here, in this project, we've gathered and neatly buried
 # all our shit in the file below. :)
 
-def implement[**Ts, R](func: typing.Callable[Ts, R]) -> typing.Callable[Ts, R]:
-    if inspect.isfunction(func):
-        return func
-    elif isinstance(func, _MultiFunc):
-        for subfunc in func.functions:
-            setattr(inspect.getmodule(subfunc), subfunc.__name__, subfunc)
-        return typing.cast(_MultiFunc[Ts, R], func)
-    else:
-        assert False
-
 def member(cls: type) -> typing.Callable[[typing.Callable[..., typing.Any]], None]:
     def memberizer(func: typing.Callable[..., typing.Any]) -> None:
         if inspect.isfunction(func):
             setattr(cls, func.__name__, func)
         elif isinstance(func, _MultiFunc):
             for subfunc in func.functions:
-                setattr(cls, subfunc.__name__, subfunc)
+                memberizer(subfunc)
         else:
             assert False
     return memberizer

@@ -4,20 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cppmake"
-version = "127.0.17"
+version = "127.0.18"
 description = "A modern C++ builder based on C++20 Modules."
 authors = [{name = "shyeyian", email = "shyeyian@icloud.com"}]
 readme = "readme.md"
 requires-python = ">=3.13"
-license = "MIT"
-scripts = {cppmake = "cppmake:main", cppmaked = "cppmaked:main"}
-
-[tool.setuptools]
-py-modules = ["cppmake", "cppmaked"]
-
-[tool.setuptools.package-dir]
-"" = "lib"
+license = "GPL-3.0"
+scripts = {cppmake = "cppmake.__main__:main", cppmaked = "cppmaked.__main__:main"}
 
 [tool.setuptools.packages.find]
-where = ["lib"]
-include = ["cppmakelib*"]
+where = ["bin", "lib"]
+namespaces = true
+

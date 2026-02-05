@@ -20,21 +20,16 @@ class Package:
     name               : str
     dir                : path
     # ========
-    search_header_dir  : path # redefinable in cppmake.py
-    search_module_dir  : path # redefinable in cppmake.py
+    include_dir        : path # redefinable in cppmake.py
+    import_dir         : path # redefinable in cppmake.py
     # ========
     build_dir          : path
-    build_cache_dir    : path
-    build_code_dir     : path
-    build_header_dir   : path
-    build_module_dir   : path
-    build_source_dir   : path
-    # ========
+    build_include_dir  : path
+    build_import_dir   : path
+    build_utility_dir  : path
     install_dir        : path
-    install_bin_dir    : path
-    install_import_dir : path
     install_include_dir: path
-    install_lib_dir    : path
+    install_import_dir : path
     # ========
     compile_flags      : list[str]      # redefinable in cppmake.py
     link_flags         : list[str]      # redefinable in cppmake.py
@@ -53,24 +48,20 @@ class Package:
 @unique
 def __init__(self: Package, dir: path) -> None:
     self.dir                 = dir
-    self.search_header_dir   = f'{self.dir}/header'
-    self.search_module_dir   = f'{self.dir}/module'
-    self.build_dir           = f'binary/{config.type}/{self.name}/build'
-    self.build_cache_dir     = f'binary/{config.type}/{self.name}/build/cache'
-    self.build_code_dir      = f'binary/{config.type}/{self.name}/build/code'
-    self.build_header_dir    = f'binary/{config.type}/{self.name}/build/header'
-    self.build_module_dir    = f'binary/{config.type}/{self.name}/build/module'
-    self.build_source_dir    = f'binary/{config.type}/{self.name}/build/source'
-    self.install_dir         = f'binary/{config.type}/{self.name}/install'
-    self.install_bin_dir     = f'binary/{config.type}/{self.name}/install/bin'
-    self.install_import_dir  = f'binary/{config.type}/{self.name}/install/import'
-    self.install_include_dir = f'binary/{config.type}/{self.name}/install/include'
-    self.install_lib_dir     = f'binary/{config.type}/{self.name}/install/lib'
+    self.include_dir         = f'{self.dir}/include'
+    self.import_dir          = f'{self.dir}/import'
+    self.build_dir           = f'.cppmake/{config.type}/{self.name}/build'
+    self.build_include_dir   = f'{self.build_dir}/include'
+    self.build_import_dir    = f'{self.build_dir}/import'
+    self.build_utility_dir   = f'{self.build_dir}/utility'
+    self.install_dir         = f'.cppmake/{config.type}/{self.name}/install'
+    self.install_include_dir = f'{self.install_dir}/include'
+    self.install_import_dir  = f'{self.install_dir}/import'
     self.compile_flags       = []
     self.link_flags          = []
     self.define_macros       = {}
     self.require_packages    = []
-    self.unit_status_logger  = UnitStatusLogger(build_cache_dir=self.build_cache_dir)
+    self.unit_status_logger  = UnitStatusLogger(build_utility_dir=self.build_utility_dir)
     self.cppmake_file        = f'{self.dir}/cppmake.py'
     with context.switch(package=self):
         self.cppmake = import_module(file=self.cppmake_file, globals={'self': self})
