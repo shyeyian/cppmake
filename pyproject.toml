@@ -16,8 +16,8 @@ scripts = {cppmake = "cppmake:main", cppmaked = "cppmaked:main"}
 py-modules = ["cppmake", "cppmaked"]
 
 [tool.setuptools.package-dir]
-"" = "src"
+"" = "lib"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["lib"]
 include = ["cppmakelib*"]
