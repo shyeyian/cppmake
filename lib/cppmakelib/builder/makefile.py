@@ -1,12 +1,3 @@
-from cppmakelib.basic.config       import config
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.error.config       import ConfigError
-from cppmakelib.error.subprocess   import SubprocessError
-from cppmakelib.executor.run       import async_run
-from cppmakelib.utility.filesystem import absolute_path, create_dir, path, remove_dir
-from cppmakelib.utility.decorator  import member, syncable, unique
-from cppmakelib.utility.version    import Version
-
 class Makefile:
     def           __init__(self, file: path = 'make')                                                              -> None: ...
     async def    __ainit__(self, file: path = 'make')                                                              -> None: ...
@@ -22,9 +13,17 @@ makefile: Makefile
 
 
 
+from cppmakelib.basic.config       import config
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.error.config       import ConfigError
+from cppmakelib.error.subprocess   import SubprocessError
+from cppmakelib.executor.run       import async_run
+from cppmakelib.utility.decorator  import member, syncable
+from cppmakelib.utility.filesystem import absolute_path, create_dir, path, remove_dir
+from cppmakelib.utility.version    import Version
+
 @member(Makefile)
 @syncable
-@unique
 async def __ainit__(self: Makefile, file: path = 'make') -> None:
     self.file        = file
     self.version     = await self._async_get_version()
@@ -90,7 +89,7 @@ async def _async_get_version(self: Makefile) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'makefile check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^GNU Make (\d+)\.(\d+)\.(\d+)', string=stdout)
+        version = Version.parse(pattern=r'^GNU Make (\d+)\.(\d+)\.(\d+)', string=stdout.splitlines()[0])
     except Version.ParseError as error:
         raise ConfigError(f'makefile check failed (with file = {self.file})') from error
     if version < 3:

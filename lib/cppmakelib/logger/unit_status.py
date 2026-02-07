@@ -1,16 +1,3 @@
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.error.logic        import LogicError
-from cppmakelib.executor.operation import when_all
-from cppmakelib.unit.code          import Code
-from cppmakelib.unit.module        import Module
-from cppmakelib.unit.object        import Object
-from cppmakelib.unit.source        import Source
-from cppmakelib.utility.decorator  import member
-from cppmakelib.utility.filesystem import create_dir, parent_dir, path
-import json
-import re
-import typing
-
 class UnitStatusLogger:
     # ========
     def           __init__                (self, build_utility_dir: path)                   -> None      : ...
@@ -49,6 +36,19 @@ class UnitStatusLogger:
     
 
 
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.error.logic        import LogicError
+from cppmakelib.executor.operation import when_all
+from cppmakelib.unit.code          import Code
+from cppmakelib.unit.module        import Module
+from cppmakelib.unit.object        import Object
+from cppmakelib.unit.source        import Source
+from cppmakelib.utility.decorator  import member
+from cppmakelib.utility.filesystem import create_dir, parent_dir, path
+import json
+import re
+import typing
+
 @member(UnitStatusLogger)
 def __init__(self: UnitStatusLogger, build_utility_dir: path) -> None:
     self._file = f'{build_utility_dir}/unit_status.json'
@@ -57,10 +57,12 @@ def __init__(self: UnitStatusLogger, build_utility_dir: path) -> None:
     except:
         self._content = {}
 
+_json = json
+_open = open
 @member(UnitStatusLogger)
 def __del__(self: UnitStatusLogger) -> None:
     create_dir(parent_dir(self._file))
-    json.dump(self._content, open(self._file, 'w'), indent=4)
+    _json.dump(self._content, _open(self._file, 'w'), indent=4)
 
 @member(UnitStatusLogger)
 def get_code_preprocessed(self: UnitStatusLogger, code: Code) -> bool:
@@ -79,18 +81,20 @@ async def async_get_module_name(self: UnitStatusLogger, module: Module) -> str:
         name = self._get(entry=['module', 'name', module.file], check={'module': module, 'compiler': compiler}, result='name')
     except UnitStatusLogger._StatusNotFoundError:
         await module.async_preprocess()
-        statements = re.findall(
-            pattern=r'^\s*(export\s+)?module\s+(\w+([\.:]\w+)*)\s*;\s*$',
+        names = re.findall(
+            pattern=r'^\s*(?:export\s+)?module\s+(\w+(?:[\.:]\w+)*)\s*;\s*$',
             string =open(module.preprocessed_file, 'r').read(),
             flags  =re.MULTILINE
         )
-        if len(statements) == 0:
+        if len(names) == 0:
             raise LogicError(f'module {module.file} does not have a export statement')
-        elif len(statements) == 1:
-            name = statements[0].group(2)
+        elif len(names) == 1:
+            name = names[0]
             self.set_module_name(module=module, name=name)
-        else: # len(exports) >= 2:
-            raise LogicError(f'module {module.file} has multiple export statements (with statements = {statements})')
+        elif len(names) >= 2:
+            raise LogicError(f'module {module.file} has multiple export names (with names = {names})')
+        else:
+            assert False
     return name
         
 @member(UnitStatusLogger)
@@ -103,12 +107,12 @@ async def async_get_module_imports(self: UnitStatusLogger, module: Module) -> li
         imports = self._get(entry=['module', 'imports', module.file], check={'module':  module, 'compiler': compiler}, result='imports')
     except UnitStatusLogger._StatusNotFoundError:
         await module.async_preprocess()
-        statements = re.findall(
-            pattern=r'^\s*(export\s+)?import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
+        imports = re.findall(
+            pattern=r'^\s*(?:export\s+)?import\s+module\s+(\w+(?:[\.:]\w+)*)\s*;\s$',
             string =open(module.preprocessed_file, 'r').read(),
             flags  =re.MULTILINE
         )
-        imports = [f'{module.context_package.import_dir}/{statement.group(2).replace('.', '/').replace(':', '/')}.cpp' for statement in statements]
+        imports = [f'{module.context_package.import_dir}/{import_.replace('.', '/').replace(':', '/')}.cpp' for import_ in imports]
         await self.async_set_module_imports(module=module, imports=imports)
     return imports
 
@@ -134,12 +138,12 @@ async def async_get_source_imports(self: UnitStatusLogger, source: Source) -> li
         imports = self._get(entry=['source', 'imports', source.file], check={'source': source, 'compiler': compiler}, result='imports')
     except UnitStatusLogger._StatusNotFoundError:
         await source.async_preprocess()
-        statements = re.findall(
-            pattern=r'^\s*import\s+module\s+(\w+([\.:]\w+)*)\s*;\s$',
+        imports = re.findall(
+            pattern=r'^\s*import\s+module\s+(\w+(?:[\.:]\w+)*)\s*;\s$',
             string =open(source.preprocessed_file, 'r').read(),
             flags  =re.MULTILINE
         )
-        imports = [f'{source.context_package.import_dir}/{statement.group(1).replace('.', '/').replace(':', '/')}.cpp' for statement in statements]
+        imports = [f'{source.context_package.import_dir}/{import_.replace('.', '/').replace(':', '/')}.cpp' for import_ in imports]
         await self.async_set_source_imports(source=source, imports=imports)
     return imports
 

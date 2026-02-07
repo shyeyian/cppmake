@@ -1,6 +1,3 @@
-from cppmakelib.utility.color     import red, bold
-from cppmakelib.utility.decorator import member
-
 class SubprocessError(Exception):
     command  : list[str]
     exit_code: int
@@ -14,6 +11,8 @@ class SubprocessError(Exception):
     _stderr_printed : bool
 
 
+
+from cppmakelib.utility.decorator import member
 
 @member(SubprocessError)
 def __init__(

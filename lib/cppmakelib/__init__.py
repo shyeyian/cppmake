@@ -1,30 +1,29 @@
 from cppmakelib.basic.config        import config
 
 from cppmakelib.builder.cmake       import cmake
-from .builder.include     import include
-from .builder.makefile    import makefile
+from cppmakelib.builder.makefile    import makefile
 
-from .compiler.all        import compiler
-from .compiler.clang      import Clang
-from .compiler.emcc       import Emcc
-from .compiler.gcc        import Gcc
+from cppmakelib.compiler.all        import compiler
+from cppmakelib.compiler.clang      import Clang
+from cppmakelib.compiler.emcc       import Emcc
+from cppmakelib.compiler.gcc        import Gcc
 
-from .error.config        import ConfigError
-from .error.logic         import LogicError
-from .error.subprocess    import SubprocessError
+from cppmakelib.error.config        import ConfigError
+from cppmakelib.error.logic         import LogicError
+from cppmakelib.error.subprocess    import SubprocessError
 
-from .executor.operation  import sync_wait, start_detached, when_all, when_any
-from .executor.run        import run
+from cppmakelib.executor.operation  import sync_wait, start_detached, when_all, when_any
+from cppmakelib.executor.run        import async_run
 
-from .system.all          import system
-from .system.linux        import Linux
-from .system.macos        import Macos
-from .system.windows      import Windows
+from cppmakelib.system.all          import system
+from cppmakelib.system.linux        import Linux
+from cppmakelib.system.macos        import Macos
+from cppmakelib.system.windows      import Windows
 
-from .unit.executable     import Executable
-from .unit.header         import Header
-from .unit.module         import Module
-from .unit.package        import Package
-from .unit.source         import Source
+from cppmakelib.unit.executable     import Executable
+from cppmakelib.unit.header         import Header
+from cppmakelib.unit.module         import Module
+from cppmakelib.unit.package        import Package
+from cppmakelib.unit.source         import Source
 
 self: Package

@@ -1,12 +1,3 @@
-from cppmakelib.basic.config       import config
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.error.config       import ConfigError
-from cppmakelib.error.subprocess   import SubprocessError
-from cppmakelib.executor.run       import async_run
-from cppmakelib.utility.filesystem import create_dir, path, remove_dir
-from cppmakelib.utility.decorator  import member, syncable, unique
-from cppmakelib.utility.version    import Version
-
 class Cmake: 
     def           __init__(self, file: path = 'cmake')                                                                                   -> None: ...
     async def    __ainit__(self, file: path = 'cmake')                                                                                   -> None: ...
@@ -22,9 +13,17 @@ cmake: Cmake
 
 
 
+from cppmakelib.basic.config       import config
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.error.config       import ConfigError
+from cppmakelib.error.subprocess   import SubprocessError
+from cppmakelib.executor.run       import async_run
+from cppmakelib.utility.decorator  import member, syncable
+from cppmakelib.utility.filesystem import create_dir, path, remove_dir
+from cppmakelib.utility.version    import Version
+
 @member(Cmake)
 @syncable
-@unique
 async def __ainit__(self: Cmake, file: path = 'cmake') -> None:
     self.file        = file
     self.version     = await self._async_get_version()
@@ -83,7 +82,6 @@ async def async_build(
         raise
 
 @member(Cmake)
-@syncable
 async def _async_get_version(self: Cmake) -> Version:
     try:
         stdout = await async_run(
@@ -94,9 +92,11 @@ async def _async_get_version(self: Cmake) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'cmake check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^cmake version (\d+)\.(\d+)\.(\d+)', string=stdout)
+        version = Version.parse(pattern=r'^cmake version (\d+)\.(\d+)\.(\d+)', string=stdout.splitlines()[0])
     except Version.ParseError as error:
         raise ConfigError(f'cmake check failed (with file = {self.file})') from error
     if version < 4:
         raise ConfigError(f'cmake version is too old (with file = {self.file}, version = {version}, requires = 4+)')
     return version
+
+cmake = Cmake()

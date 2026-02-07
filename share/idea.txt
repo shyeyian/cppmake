@@ -1,17 +1,2 @@
-Module, Source是否应该继承Code?
-
-优点:
-1. 由于Module(file)和Package(dir)，固定module/不是个好方法了。
-2. Code.preprocess() -> Preprocessed成为公共接口。
-3. 去除掉compiler.preprocess() -> str的接口。
-4. 由于Object既可以由Module.compile()产出，又可以由Source.compile()产出，在name情况下Object无法表示Module情况，file情况下可以。
-
-
-缺点:
-1. ******需要Module(file), Source(file)而不是name******
-2. 由1, 我们可以加入Header了，因为Header必须Header(file)。
-3. distribution模块中, remote_compiler.compile并不需要Module.preprocessed_file, 但需要参数传preprocessed_file.
-
-平点: 
-1. Source.compile(into: type[Object] | type[Static] | type[Shared] | type[Executable])不变
-2. preprocessed_file由编译命令存储，再由python进程打开，速度1:1.1~1.2差异。
+Object构造函数应该需要from_code, Object.lib_objects应当自己推断而不是找unit_status_logger
+同理Precompiled.install需要自己找子install而不依赖于unit_status_logger

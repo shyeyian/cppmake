@@ -1,13 +1,4 @@
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.executor.operation import when_all
-from cppmakelib.executor.scheduler import scheduler
-from cppmakelib.system.all         import system
-from cppmakelib.unit.code          import Code
-from cppmakelib.unit.module        import Module
-from cppmakelib.unit.object        import Object
-from cppmakelib.utility.algorithm  import recursive_collect
-from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
-from cppmakelib.utility.filesystem import path, relative_path, replace_suffix_file
+from cppmakelib.unit.code import Code
 
 class Source(Code):
     def           __new__      (cls: ..., file: path) -> Source: ...
@@ -24,10 +15,20 @@ class Source(Code):
 
 
 
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.executor.operation import when_all
+from cppmakelib.executor.scheduler import scheduler
+from cppmakelib.system.all         import system
+from cppmakelib.unit.module        import Module
+from cppmakelib.unit.object        import Object
+from cppmakelib.utility.algorithm  import recursive_collect
+from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
+from cppmakelib.utility.filesystem import path, relative_path, replace_suffix_file
+
 @member(Source)
-@relocatable
 @syncable
 @unique
+@relocatable
 async def __ainit__(self: Source, file: path) -> None:
     await super(Source, self).__ainit__(file)
     self.object_file     = f'{self.context_package.build_dir}/{replace_suffix_file(relative_path(from_path=self.context_package.dir, to_path=file), system.object_suffix)}'

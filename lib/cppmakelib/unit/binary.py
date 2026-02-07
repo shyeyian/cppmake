@@ -1,11 +1,4 @@
-from cppmakelib.basic.context      import context
-from cppmakelib.unit.package       import Package
-from cppmakelib.utility.decorator  import member, unique
-from cppmakelib.utility.filesystem import modified_time_file, path
-from cppmakelib.utility.time       import time
-
 class Binary:
-    def           __new__  (cls,  file       : path) -> Binary: ...
     def           __init__ (self, file       : path) -> None  : ...
     def             install(self, install_dir: path) -> Binary: ...
     async def async_install(self, install_dir: path) -> Binary: ...
@@ -20,8 +13,13 @@ class Binary:
 
 
 
+from cppmakelib.basic.context      import context
+from cppmakelib.unit.package       import Package
+from cppmakelib.utility.decorator  import member
+from cppmakelib.utility.filesystem import modified_time_file, path
+from cppmakelib.utility.time       import time
+
 @member(Binary)
-@unique
 def __init__(self: Binary, file: path) -> None:
     self.file            = file
     self.modified_time   = modified_time_file(self.file)

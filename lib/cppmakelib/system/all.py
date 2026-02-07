@@ -1,11 +1,11 @@
+system: Linux | Macos | Windows
+
+
+
 from cppmakelib.error.config   import ConfigError
 from cppmakelib.system.linux   import Linux
 from cppmakelib.system.macos   import Macos
 from cppmakelib.system.windows import Windows
-
-system: Linux | Macos | Windows
-
-
 
 def _choose_system() -> Linux | Macos | Windows:
     matches: list[Linux | Macos | Windows] = []

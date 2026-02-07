@@ -1,12 +1,4 @@
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.executor.operation import when_all
-from cppmakelib.executor.scheduler import scheduler
-from cppmakelib.system.all         import system
-from cppmakelib.unit.code          import Code
-from cppmakelib.unit.precompiled   import Precompiled
-from cppmakelib.utility.algorithm  import recursive_collect
-from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
-from cppmakelib.utility.filesystem import path
+from cppmakelib.unit.code import Code
 
 class Module(Code):
     def           __new__         (cls: ..., file: path) -> Module     : ...
@@ -23,12 +15,21 @@ class Module(Code):
     diagnostic_file : path
     import_modules  : list[Module]
 
-    
+
+
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.executor.operation import when_all
+from cppmakelib.executor.scheduler import scheduler
+from cppmakelib.system.all         import system
+from cppmakelib.unit.precompiled   import Precompiled
+from cppmakelib.utility.algorithm  import recursive_collect
+from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
+from cppmakelib.utility.filesystem import path
 
 @member(Module)
-@relocatable
 @syncable
 @unique
+@relocatable
 async def __ainit__(self: Module, file: path) -> None:
     await super(Module, self).__ainit__(file)
     self.name             = await self.context_package.unit_status_logger.async_get_module_name(module=self)

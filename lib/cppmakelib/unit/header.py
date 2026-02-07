@@ -1,11 +1,4 @@
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.executor.operation import when_all
-from cppmakelib.executor.scheduler import scheduler
-from cppmakelib.unit.code          import Code
-from cppmakelib.unit.preparsed     import Preparsed
-from cppmakelib.utility.algorithm  import recursive_collect
-from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
-from cppmakelib.utility.filesystem import path, relative_path
+from cppmakelib.unit.code import Code
 
 class Header(Code):
     def           __new__       (cls: ..., file: path) -> Header   : ...
@@ -24,10 +17,18 @@ class Header(Code):
 
 
 
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.executor.operation import when_all
+from cppmakelib.executor.scheduler import scheduler
+from cppmakelib.unit.preparsed     import Preparsed
+from cppmakelib.utility.algorithm  import recursive_collect
+from cppmakelib.utility.decorator  import member, once, relocatable, syncable, unique
+from cppmakelib.utility.filesystem import path, relative_path
+
 @member(Header)
-@relocatable
 @syncable
 @unique
+@relocatable
 async def __ainit__(self: Header, file: path) -> None:
     await super(Header, self).__ainit__(file)
     self.name            = relative_path(from_path=self.context_package.search_header_dir, to_path=self.file)

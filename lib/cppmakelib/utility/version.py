@@ -1,10 +1,4 @@
-from cppmakelib.error.config      import ConfigError
-from cppmakelib.error.logic       import LogicError
-from cppmakelib.error.subprocess  import SubprocessError
-from cppmakelib.utility.decorator import member
 import functools
-import re
-import sys
 
 @functools.total_ordering
 class Version:
@@ -21,6 +15,9 @@ class Version:
     subversions: list[int]
 
 
+
+from cppmakelib.utility.decorator import member
+import re
 
 @member(Version)
 def __init__(self: Version, subversions: list[int]) -> None:
@@ -51,10 +48,12 @@ def __lt__(self: Version, other: Version | int | float | object) -> bool:
     
 @member(Version)
 def parse(pattern: str, string: str):
-    matches = re.findall(pattern=pattern, string=string)
-    if len(matches) == 0:
+    versions = re.findall(pattern=pattern, string=string)
+    if len(versions) == 0:
         raise Version.ParseError(f'failed to parse version (with pattern = {pattern}, string = {string})')
-    elif len(matches) == 1:
-        return Version([int(group) for group in matches[0].groups()[1:]])
-    else: # len(matches) >= 2
+    elif len(versions) == 1:
+        return Version([int(subversion) for subversion in versions[0]])
+    elif len(versions) >= 2:
         raise Version.ParseError(f'ambiguous version (with pattern = {pattern}, string = {string})')
+    else:
+        assert False

@@ -1,10 +1,7 @@
-from cppmakelib.utility.decorator import member
 import typing
-if typing.TYPE_CHECKING:
-    from cppmakelib.unit.package import Package
 
 class Context:
-    def switch(self, package: Package) -> typing.ContextManager[None]: ...
+    def switch  (self, package: Package) -> typing.ContextManager[None]: ...
     package: Package 
 
     class _ContextManager:
@@ -18,6 +15,9 @@ class Context:
 context: Context
 
 
+
+from cppmakelib.unit.package      import Package
+from cppmakelib.utility.decorator import member
 
 @member(Context)
 def switch(self: Context, package: Package) -> typing.ContextManager[None]:

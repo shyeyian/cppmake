@@ -1,12 +1,12 @@
+def import_module(file: path, globals: dict[str, typing.Any] = {}) -> types.ModuleType: ...
+
+
+
 from cppmakelib.error.logic        import LogicError
 from cppmakelib.utility.filesystem import path
 import importlib.util
 import types
 import typing
-
-def import_module(file: path, globals: dict[str, typing.Any] = {}) -> types.ModuleType: ...
-
-
 
 def import_module(file: path, globals: dict[str, typing.Any] = {}) -> types.ModuleType:
     try:

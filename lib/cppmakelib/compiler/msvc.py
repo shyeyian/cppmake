@@ -1,7 +1,3 @@
-from cppmakelib.utility.decorator import syncable, unique
-from cppmakelib.utility.version   import Version
-import sys
-
 class Msvc:
     name                = 'msvc'
     intermediate_suffix = '.i'
@@ -22,3 +18,7 @@ class Msvc:
             check  =lambda stderr: stderr.startswith('Microsoft') and 'msvc' in stderr,
             lowest =19.36
         )
+    
+from cppmakelib.utility.decorator import syncable, unique
+from cppmakelib.utility.version   import Version
+import sys

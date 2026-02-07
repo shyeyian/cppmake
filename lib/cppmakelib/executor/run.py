@@ -1,40 +1,26 @@
-from cppmakelib.basic.config            import config
+from cppmakelib.basic.config import config
+import typing
+
+@typing.overload
+async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[False] = False) -> None           : ...
+@typing.overload
+async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[True])          -> str            : ...
+@typing.overload
+async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[False] = False) -> str            : ...
+@typing.overload
+async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[True])          -> tuple[str, str]: ...
+
+
+
 from cppmakelib.error.subprocess        import SubprocessError
 from cppmakelib.executor.operation      import when_all
 from cppmakelib.executor.scheduler      import Scheduler
-from cppmakelib.utility.filesystem      import path
 from cppmakelib.logger.compile_commands import compile_commands_logger
-from cppmakelib.utility.decorator       import syncable
+from cppmakelib.utility.filesystem      import path
 import asyncio
 import sys
-import typing
-
-def             run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, return_stdout: bool = False, return_stderr: bool = False) -> None | str | tuple[str, str]: ...
-async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, return_stdout: bool = False, return_stderr: bool = False) -> None | str | tuple[str, str]: ...
-
-if typing.TYPE_CHECKING:
-    @typing.overload
-    def             run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[False] = False) -> None           : ...
-    @typing.overload
-    def             run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[True])          -> str            : ...
-    @typing.overload
-    def             run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[False] = False) -> str            : ...
-    @typing.overload
-    def             run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[True])          -> tuple[str, str]: ...
-    @typing.overload
-    async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[False] = False) -> None           : ...
-    @typing.overload
-    async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[False] = False, return_stderr: typing.Literal[True])          -> str            : ...
-    @typing.overload
-    async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[False] = False) -> str            : ...
-    @typing.overload
-    async def async_run(file: path, args: list[str] = [], cwd: path = '.', print_command: bool = config.verbose, print_stdout: bool = config.verbose, print_stderr: bool = True, log_command: path | None = None, log_stdout: path | None = None, log_stderr: path | None = None, *, return_stdout: typing.Literal[True],          return_stderr: typing.Literal[True])          -> tuple[str, str]: ...
-
-
 
 _internal_scheduler = Scheduler(config.jobs)
-
-@syncable
 async def async_run(
     file         : path,
     args         : list[str]   = [], 
@@ -48,6 +34,7 @@ async def async_run(
     return_stdout: bool        = False,
     return_stderr: bool        = False,
 ) -> None | str | tuple[str, str]:
+    global _internal_scheduler
     async with _internal_scheduler.schedule():
         if print_command:
             print(' '.join([file] + args))
@@ -57,6 +44,7 @@ async def async_run(
             file, 
             *args,
             cwd   =cwd,
+            stdin =asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
@@ -89,8 +77,10 @@ async def async_run(
                 return stderr
             elif return_stdout and not return_stderr:
                 return stdout
-            else: # return_stdout and return_stderr
+            elif return_stdout and return_stderr:
                 return stdout, stderr
+            else:
+                assert False
         else:
             raise SubprocessError(
                 command        =[file] + args, 

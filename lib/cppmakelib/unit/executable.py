@@ -1,9 +1,4 @@
-from cppmakelib.error.subprocess    import SubprocessError
-from cppmakelib.executor.run       import async_run
-from cppmakelib.executor.scheduler import scheduler
-from cppmakelib.unit.binary        import Binary
-from cppmakelib.utility.decorator  import member, once, syncable, unique
-from cppmakelib.utility.filesystem import path
+from cppmakelib.unit.binary import Binary
 
 class Executable(Binary):
     def           __new__  (cls,  file: path) -> Executable: ...
@@ -14,6 +9,12 @@ class Executable(Binary):
     async def async_test   (self)             -> None      : ...
 
 
+
+from cppmakelib.error.subprocess   import SubprocessError
+from cppmakelib.executor.run       import async_run
+from cppmakelib.executor.scheduler import scheduler
+from cppmakelib.utility.decorator  import member, once, syncable, unique
+from cppmakelib.utility.filesystem import path
 
 @member(Executable)
 @unique

@@ -1,14 +1,6 @@
-from cppmakelib.compiler.all       import compiler
-from cppmakelib.executor.scheduler import scheduler
-from cppmakelib.unit.binary        import Binary
-from cppmakelib.unit.dynamic       import Dynamic
-from cppmakelib.unit.executable    import Executable
-from cppmakelib.utility.algorithm  import recursive_collect
-from cppmakelib.utility.decorator  import member, once, syncable, unique
-from cppmakelib.utility.filesystem import iterate_dir, path
+from cppmakelib.unit.binary import Binary
 
 class Object(Binary):
-    def           __new__    (cls,  file: path) -> Object    : ...
     def           __init__   (self, file: path) -> None      : ...
     def             share    (self)             -> Dynamic   : ...
     async def async_share    (self)             -> Dynamic   : ...
@@ -25,8 +17,15 @@ class Object(Binary):
 
 
 
+from cppmakelib.compiler.all       import compiler
+from cppmakelib.executor.scheduler import scheduler
+from cppmakelib.unit.dynamic       import Dynamic
+from cppmakelib.unit.executable    import Executable
+from cppmakelib.utility.algorithm  import recursive_collect
+from cppmakelib.utility.decorator  import member, once, syncable
+from cppmakelib.utility.filesystem import iterate_dir, path
+
 @member(Object)
-@unique
 def __init__(self: Object, file: path) -> None:
     super(Object, self).__init__(file)
     self.lib_objects = [Object(file) for file in self.context_package.unit_status_logger.get_object_libs(object=self)]

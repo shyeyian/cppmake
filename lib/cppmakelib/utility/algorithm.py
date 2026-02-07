@@ -1,12 +1,9 @@
 import typing
 
-def recursive_collect[T, U, R](node: U, next: typing.Callable[[U | T], list[T]], collect: typing.Callable[[U | T], R | list[R] | None], flatten: bool = False) -> list[R]: ...
-
-if typing.TYPE_CHECKING:
-    @typing.overload
-    def recursive_collect[T, U, R](node: U, next: typing.Callable[[U | T], list[T]], collect: typing.Callable[[T], R | None], *, flatten: typing.Literal[False] = False) -> list[R]: ...
-    @typing.overload
-    def recursive_collect[T, U, R](node: U, next: typing.Callable[[U | T], list[T]], collect: typing.Callable[[T], list[R]],  *, flatten: typing.Literal[True])          -> list[R]: ...
+@typing.overload
+def recursive_collect[T, U, R](node: U, next: typing.Callable[[U | T], list[T]], collect: typing.Callable[[T], R | None], *, flatten: typing.Literal[False] = False) -> list[R]: ...
+@typing.overload
+def recursive_collect[T, U, R](node: U, next: typing.Callable[[U | T], list[T]], collect: typing.Callable[[T], list[R]],  *, flatten: typing.Literal[True])          -> list[R]: ...
 
 
 

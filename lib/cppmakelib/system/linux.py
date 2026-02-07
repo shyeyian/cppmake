@@ -1,9 +1,3 @@
-from cppmakelib.error.config       import ConfigError
-from cppmakelib.utility.decorator  import member
-from cppmakelib.utility.filesystem import path
-
-import sys
-
 class Linux:
     def __init__(self) -> None: ...
     executable_suffix: str  = ''
@@ -15,6 +9,11 @@ class Linux:
     def _check(self) -> None: ...
 
 
+
+from cppmakelib.error.config       import ConfigError
+from cppmakelib.utility.decorator  import member
+from cppmakelib.utility.filesystem import path
+import sys
 
 @member(Linux)
 def __init__(self: Linux) -> None:

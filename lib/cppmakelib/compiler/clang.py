@@ -1,11 +1,4 @@
-from cppmakelib.basic.config       import config
-from cppmakelib.compiler.gcc       import Gcc
-from cppmakelib.error.config       import ConfigError
-from cppmakelib.error.subprocess   import SubprocessError
-from cppmakelib.executor.run       import async_run
-from cppmakelib.utility.decorator  import member, syncable, unique
-from cppmakelib.utility.filesystem import create_dir, exist_file, parent_dir, path
-from cppmakelib.utility.version    import Version
+from cppmakelib.compiler.gcc import Gcc
 
 class Clang(Gcc):
     def           __init__    (self, file: path = 'clang++')                                                                                                                                                                                                            -> None: ...
@@ -16,17 +9,17 @@ class Clang(Gcc):
     async def async_preparse  (self, header_file: path, preparsed_file  : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [],                               diagnostic_file: path | None = None) -> None: ...
     def             compile   (self, source_file: path, object_file     : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [], import_dirs: list[path] = [], diagnostic_file: path | None = None) -> None: ...
     async def async_compile   (self, source_file: path, object_file     : path,                    compile_flags: list[str] = [], define_macros: dict[str, str] = {}, include_dirs: list[path] = [], import_dirs: list[path] = [], diagnostic_file: path | None = None) -> None: ...
-    preparsed_suffix  : str = '.pch'
-    precompiled_suffix: str = '.pcm'
-    file              : path
-    version           : Version
-    stdlib_name       : str
-    stdlib_module_file: path
-    stdlib_static_file: path
-    stdlib_shared_file: path
-    compile_flags     : list[str]
-    link_flags        : list[str]
-    define_macros     : dict[str, str]
+    preparsed_suffix   : str = '.pch'
+    precompiled_suffix : str = '.pcm'
+    file               : path
+    version            : Version
+    compile_flags      : list[str]
+    link_flags         : list[str]
+    define_macros      : dict[str, str]
+    stdlib_name        : str
+    stdlib_module_file : path
+    stdlib_static_file : path
+    stdlib_dynamic_file: path
 
     async def _async_get_version           (self) -> Version: ...
     async def _async_get_stdlib_name       (self) -> str: ...
@@ -34,14 +27,19 @@ class Clang(Gcc):
 
 
 
+from cppmakelib.basic.config       import config
+from cppmakelib.error.config       import ConfigError
+from cppmakelib.error.subprocess   import SubprocessError
+from cppmakelib.executor.run       import async_run
+from cppmakelib.utility.decorator  import member, syncable
+from cppmakelib.utility.filesystem import create_dir, exist_file, parent_dir, path
+from cppmakelib.utility.version    import Version
+
 @member(Clang)
 @syncable
-@unique
 async def __ainit__(self: Clang, file: path = 'clang++') -> None:
     self.file               = file
     self.version            = await self._async_get_version()
-    self.stdlib_name        = await self._async_get_stdlib_name()
-    self.stdlib_module_file = await self._async_get_stdlib_module_file()
     self.compile_flags = [
        f'-std={config.std}',
        f'-stdlib={self.stdlib_name}',
@@ -59,6 +57,8 @@ async def __ainit__(self: Clang, file: path = 'clang++') -> None:
            {'NDEBUG': 'true'} if config.type == 'release' else 
            {})
     }
+    self.stdlib_name        = await self._async_get_stdlib_name()
+    self.stdlib_module_file = await self._async_get_stdlib_module_file()
 
 @member(Clang)
 @syncable
@@ -158,7 +158,7 @@ async def _async_get_version(self: Clang) -> Version:
     except SubprocessError as error:
         raise ConfigError(f'clang check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'clang version (\d+)\.(\d+)\.(\d+)', string=stdout)
+        version = Version.parse(pattern=r'clang version (\d+)\.(\d+)\.(\d+)', string=stdout.splitlines()[0])
     except Version.ParseError as error:
         raise ConfigError(f'clang check failed (with file = {self.file})') from error
     if version < 21:

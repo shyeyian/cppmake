@@ -1,12 +1,3 @@
-from cppmakelib.basic.config         import config
-from cppmakelib.error.config         import ConfigError
-from cppmakelib.error.subprocess     import SubprocessError
-from cppmakelib.executor.run         import async_run
-from cppmakelib.utility.decorator    import member, syncable, unique
-from cppmakelib.utility.filesystem   import create_dir, exist_file, iterate_dir, parent_dir, path
-from cppmakelib.utility.version      import Version
-import re
-
 class Gcc:
     def           __init__    (self, file: path = 'g++')                                                                                                                                                                                                                 -> None: ...
     async def    __ainit__    (self, file: path = 'g++')                                                                                                                                                                                                                 -> None: ...
@@ -28,13 +19,13 @@ class Gcc:
     diagnostic_suffix  : str = '.sarif'
     file               : path
     version            : Version
-    stdlib_name        : str = 'libstdc++'
-    stdlib_module_file : path
-    stdlib_static_file : path
-    stdlib_shared_file : path
     compile_flags      : list[str]
     link_flags         : list[str]
     define_macros      : dict[str, str]
+    stdlib_name        : str = 'libstdc++'
+    stdlib_module_file : path
+    stdlib_static_file : path
+    stdlib_dynamic_file: path
 
     async def _async_get_version           (self)                                             -> Version: ...
     async def _async_get_stdlib_module_file(self)                                             -> path   : ...
@@ -42,13 +33,20 @@ class Gcc:
 
 
 
+from cppmakelib.basic.config         import config
+from cppmakelib.error.config         import ConfigError
+from cppmakelib.error.subprocess     import SubprocessError
+from cppmakelib.executor.run         import async_run
+from cppmakelib.utility.decorator    import member, syncable
+from cppmakelib.utility.filesystem   import create_dir, exist_file, iterate_dir, parent_dir, path
+from cppmakelib.utility.version      import Version
+import re
+
 @member(Gcc)
 @syncable
-@unique
 async def __ainit__(self: Gcc, file: path = 'g++') -> None:
     self.file               = file
     self.version            = await self._async_get_version()
-    self.stdlib_module_file = await self._async_get_stdlib_module_file()
     self.compile_flags = [
         f'-std={config.std}', '-fmodules', 
         *(['-O0', '-g'] if config.type == 'debug'   else
@@ -65,6 +63,7 @@ async def __ainit__(self: Gcc, file: path = 'g++') -> None:
            {'DNDEBUG': 'true'} if config.type == 'release' else
            {})
     }
+    self.stdlib_module_file = await self._async_get_stdlib_module_file()
 
 @member(Gcc)
 @syncable
@@ -198,12 +197,13 @@ async def _async_get_version(self: Gcc) -> Version:
         stdout = await async_run(
             file=self.file,
             args=['--version'],
+            print_stdout=config.verbose,
             return_stdout=True
         )
     except SubprocessError as error:
         raise ConfigError(f'gcc check failed (with file = {self.file})') from error
     try:
-        version = Version.parse(pattern=r'^g++\w* \(.*\) (\d+)\.(\d+)\.(\d+)', string=stdout)
+        version = Version.parse(pattern=r'^g\+\+\w* \(.*\) (\d+)\.(\d+)\.(\d+)', string=stdout.splitlines()[0])
     except Version.ParseError as error:
         raise ConfigError(f'gcc check failed (with file = {self.file})') from error
     if version < 15:
@@ -219,10 +219,11 @@ async def _async_get_stdlib_module_file(self: Gcc) -> path:
             '-E', '-x', 'c++', '-',
             '-v' 
         ],
+        print_stderr=config.verbose,
         return_stderr=True
     )
     search_dirs = re.search(
-        pattern=r'^#include <...> search starts here:$\n(^.*$\n)*^End of search list.$', 
+        pattern=r'^#include <...> search starts here:$\n((?:^.*$\n)*)^End of search list.$', 
         string =stderr, 
         flags  =re.MULTILINE
     )
