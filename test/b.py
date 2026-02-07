@@ -1,6 +1,8 @@
-class B:
-    value = 2
+
 
 from a import A
 
-my_a = A()
+class B:
+    value = 2
+
+print('b')

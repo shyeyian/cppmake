@@ -73,9 +73,9 @@ def __init__(self: Package, name: str) -> None:
 @syncable
 @once
 async def async_build(self: Package) -> None:
+    from cppmakelib.basic.context import context
     await when_all([package.async_build() for package in self.require_packages])
     async with scheduler.schedule(scheduler.max):
-        from cppmakelib.basic.context import context
         with context.switch(package=self):
             print(f'build package {self.name}')
             self.cppmake.build() if hasattr(self.cppmake, 'build') else None

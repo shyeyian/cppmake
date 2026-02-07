@@ -39,15 +39,16 @@ class UnitStatusLogger:
 from cppmakelib.compiler.all       import compiler
 from cppmakelib.error.logic        import LogicError
 from cppmakelib.executor.operation import when_all
-from cppmakelib.unit.code          import Code
-from cppmakelib.unit.module        import Module
-from cppmakelib.unit.object        import Object
-from cppmakelib.unit.source        import Source
 from cppmakelib.utility.decorator  import member
 from cppmakelib.utility.filesystem import create_dir, parent_dir, path
 import json
 import re
 import typing
+if typing.TYPE_CHECKING:
+    from cppmakelib.unit.code   import Code
+    from cppmakelib.unit.module import Module
+    from cppmakelib.unit.object import Object
+    from cppmakelib.unit.source import Source
 
 @member(UnitStatusLogger)
 def __init__(self: UnitStatusLogger, build_utility_dir: path) -> None:

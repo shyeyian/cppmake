@@ -1,8 +1,9 @@
 import typing
 
 class Context:
-    def switch  (self, package: Package) -> typing.ContextManager[None]: ...
-    package: Package 
+    def __init__(self, package: Package) -> None                       : ...
+    def   switch(self, package: Package) -> typing.ContextManager[None]: ...
+    package: Package
 
     class _ContextManager:
         def __init__ (self, context: Context, package: Package)      -> None: ...
@@ -18,6 +19,10 @@ context: Context
 
 from cppmakelib.unit.package      import Package
 from cppmakelib.utility.decorator import member
+
+@member(Context)
+def __init__(self: Context, package: Package) -> None:
+    self.package = package
 
 @member(Context)
 def switch(self: Context, package: Package) -> typing.ContextManager[None]:
@@ -37,4 +42,4 @@ def __enter__(self: Context._ContextManager) -> None:
 def __exit__(self: Context._ContextManager, *args: typing.Any, **kwargs: typing.Any) -> None:
     self._context.package = self._old_package
 
-context = Context()
+context = Context(Package('main'))

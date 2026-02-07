@@ -17,7 +17,6 @@ class Code:
 
 
 from cppmakelib.basic.config       import config
-from cppmakelib.basic.context      import context
 from cppmakelib.compiler.all       import compiler
 from cppmakelib.executor.scheduler import scheduler
 from cppmakelib.unit.package       import Package
@@ -32,6 +31,7 @@ from cppmakelib.utility.time       import time
 @unique
 @relocatable
 async def __ainit__(self: Code, file: path) -> None:
+    from cppmakelib.basic.context import context
     self.file              = file
     self.modified_time     = modified_time_file(self.file)
     self.context_package   = context.package

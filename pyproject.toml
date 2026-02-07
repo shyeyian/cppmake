@@ -13,6 +13,6 @@ license = "GPL-3.0"
 scripts = {cppmake = "cppmake.__main__:main", cppmaked = "cppmaked.__main__:main"}
 
 [tool.setuptools.packages.find]
-where = ["bin", "include"]
+where = ["bin", "import"]
 namespaces = true
 

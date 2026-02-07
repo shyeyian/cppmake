@@ -3,5 +3,4 @@ class A:
 
 from b import B
 
-my_b = B()
-print(my_b.value)
+print('a')

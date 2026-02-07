@@ -13,7 +13,6 @@ class Binary:
 
 
 
-from cppmakelib.basic.context      import context
 from cppmakelib.unit.package       import Package
 from cppmakelib.utility.decorator  import member
 from cppmakelib.utility.filesystem import modified_time_file, path
@@ -21,6 +20,7 @@ from cppmakelib.utility.time       import time
 
 @member(Binary)
 def __init__(self: Binary, file: path) -> None:
+    from cppmakelib.basic.context import context
     self.file            = file
     self.modified_time   = modified_time_file(self.file)
     self.context_package = context.package
